@@ -42,13 +42,15 @@ Overall, the project moved from requirements analysis, to use case modeling, to 
   - [Note](#note)
   - [Main](#main)
     - [Relationships](#relationships)
-  - [Use Case Diagram](#use-case-diagram)
-  - [Sequence Diagram](#sequence-diagram)
-  - [State Diagram](#state-diagram)
-  - [Structural Mapping](#structural-mapping)
   - [Application Flow](#application-flow)
   - [Design Decisions](#design-decisions)
   - [Object-Oriented Design Principles](#object-oriented-design-principles)
+  - [BDD Traceability to Use Cases](#bdd-traceability-to-use-cases)
+    - [Find Chord BDD Traceability](#find-chord-bdd-traceability)
+    - [Maintain Chord Formula BDD Traceability](#maintain-chord-formula-bdd-traceability)
+    - [BDD Scenario Examples](#bdd-scenario-examples)
+  - [TDD Traceability to Methods](#tdd-traceability-to-methods)
+    - [Traceability Summary](#traceability-summary)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Clone the Project](#clone-the-project)
@@ -94,7 +96,14 @@ This domain model keeps the system focused on the objects needed to support the 
 
 The primary use cases in the ChordFinder application are Find Chord and Maintain Chord Formula.
 
-![alt text](image-1.png)
+![alt text](image-14.png)
+
+
+
+
+
+
+
 
 ### Find Chord
 
@@ -102,14 +111,7 @@ Primary Actor: Chord Finder User
 
 The Chord Finder User enters exactly three notes and submits them for chord identification. The system validates the notes, compares them against the available chord formulas, and displays all matching chord names.
 
-Main flow:
-
-1. User selects Chord Finder User.
-2. User enters three notes.
-3. User submits notes.
-4. System validates notes.
-5. System identifies chord matches.
-6. System displays all applicable chord names.
+![alt text](image-3.png)
 
 Alternative flows:
 
@@ -127,13 +129,7 @@ The Administrator maintains the chord formulas used by future chord searches. Th
 
 Main flow:
 
-1. Administrator selects Administrator.
-2. System requests administrator password.
-3. Administrator enters password.
-4. System displays the formula maintenance menu.
-5. Administrator chooses a maintenance action.
-6. System updates the formula set.
-7. System confirms the maintenance result.
+![alt text](image-4.png)
 
 Supported actions:
 
@@ -144,7 +140,7 @@ Supported actions:
 
 ## UML Class Diagram
 
-The UML class diagram represents the main classes in the ChordFinder system and how they relate to each other.
+![alt text](image-5.png)
 
 
 ### Classes
@@ -224,79 +220,12 @@ Main
 
 ### Relationships
 
-Main uses ChordFinderSystem
+ChordFinderSystem has a ChordFormula enttiy
 
-ChordFinderSystem aggregates many ChordFormula objects
+ChordFormula identifies Chord
 
-ChordFinderSystem validates three Note objects
+Chord has a root Note
 
-ChordFinderSystem identifies zero or more Chord objects
-
-ChordFormula classifies zero or more Chord objects
-
-Chord uses one ChordFormula
-
-Chord has one root Note
-
-Chord aggregates three Note objects
-
-## Use Case Diagram
-
-The use case diagram shows two primary actors: Chord Finder User and Administrator.
-
-The Chord Finder User performs the Find Chord use case. This use case allows the user to enter three notes, submit the notes for identification, and receive matching chord names or a clear result message.
-
-The Administrator performs the Maintain Chord Formula use case. This use case includes Define Chord Formula, Edit Chord Formula, Delete Chord Formula, and View Chord Formulas.
-
-The use case diagram separates normal chord identification behavior from administrative formula maintenance behavior. This makes the system responsibilities clear and keeps user-facing behavior separate from administrator behavior.
-
-## Sequence Diagram
-
-The sequence diagram for Find Chord shows the interaction that occurs when a user submits notes.
-
-The sequence begins when the Chord Finder User enters three notes into the console interface. The Main class sends the submitted note text to ChordFinderSystem. ChordFinderSystem validates the note count and note spellings by creating Note objects. If the notes are invalid, the system returns an error message.
-
-If the notes are valid, ChordFinderSystem checks each possible root note against each available ChordFormula. Each ChordFormula determines whether the submitted notes match its interval pattern. When a formula matches, the system creates a Chord object using the root note and matching formula.
-
-After all formulas and possible roots are checked, ChordFinderSystem returns the list of identified chords. Main displays either all matching chord names or a no matching chord message.
-
-The administrator sequence begins when the Administrator logs in and selects a formula maintenance action. Main sends the selected action to ChordFinderSystem. ChordFinderSystem then defines, edits, deletes, or displays formulas based on the selected action.
-
-## State Diagram
-
-The ChordFinder application moves through a small set of states during execution.
-
-The application begins in the Start state. From there, the system displays the role selection menu. The user can choose Chord Finder User, Administrator, or Exit.
-
-If Chord Finder User is selected, the system enters the Find Chord state. In this state, the user enters notes and submits them for identification. The system then enters Validate Notes. If validation fails, the system displays an error message and returns to Find Chord. If validation succeeds, the system enters Identify Chord. The system then displays either matching chord names or a no matching chord message.
-
-If Administrator is selected, the system enters Administrator Login. If the password is invalid, the system returns to the main menu. If the password is valid, the system enters Maintain Chord Formula. From there, the administrator can define, edit, delete, or view formulas.
-
-The application ends when the user selects Exit from the main menu.
-
-## Structural Mapping
-
-The structural mapping shows how the major ChordFinder objects are connected.
-
-ChordFinderSystem is the central object. It owns the current list of ChordFormula objects. A ChordFinderSystem can have many ChordFormula objects because the administrator can add formulas over time.
-
-ChordFinderSystem identifies zero or more Chord objects from submitted notes. A search may return no matching chords, one matching chord, or multiple matching chords.
-
-A Chord is classified by one ChordFormula. A Chord also has one root Note and is made from exactly three Note objects.
-
-A Note contains its spelling and pitch position information. The pitch position is used to calculate intervals in half steps.
-
-Main is not part of the core domain model, but it acts as the console boundary class that lets users interact with ChordFinderSystem.
-
-Main relationships:
-
-ChordFinderSystem 1 aggregates 1..* ChordFormula  
-ChordFinderSystem 1 identifies 0..* Chord  
-ChordFormula 1 classifies 0..* Chord  
-Chord 1 uses 1 ChordFormula  
-Chord 1 has 1 root Note  
-Chord 1 aggregates 3 Note  
-Main 1 uses 1 ChordFinderSystem  
 
 ## Application Flow
 
@@ -315,6 +244,33 @@ The core application flow is:
 5. Process the selected behavior.
 6. Display result.
 7. Return to menu or exit.
+
+
+
+
+
+
+![alt text](image-6.png)
+
+![alt text](image-7.png)
+
+![alt text](image-8.png)
+
+
+![alt text](image-9.png)
+
+![alt text](image-10.png)
+
+![alt text](image-11.png)
+
+
+![alt text](image-12.png)
+
+![alt text](image-13.png)
+
+
+
+
 
 ## Design Decisions
 
@@ -343,6 +299,174 @@ Association is used where objects interact without strong ownership. For example
 The design follows high cohesion because each class has a focused responsibility. Note handles note behavior, ChordFormula handles formula behavior, Chord handles chord result behavior, and ChordFinderSystem handles coordination.
 
 The design also supports low coupling because each class interacts through clear method calls. The system can add or edit formulas without changing the Note or Chord classes.
+
+
+## BDD Traceability to Use Cases
+
+BDD was used to test the system behavior from the actor and use case perspective. The BDD scenarios connect directly to the main use cases and verify what the Chord Finder User and Administrator expect the system to do.
+
+### Find Chord BDD Traceability
+
+```text
+Use Case: Find Chord
+
+Behavior                                      BDD Scenario
+---------------------------------------------------------------------------
+User submits valid major triad                Identify G major from D G B
+
+User submits valid minor triad                Identify C minor from C Eb G
+
+User submits augmented triad                  Identify multiple augmented chords from B D# G
+
+User submits fewer than three notes           Reject fewer than three notes
+
+User submits more than three notes            Reject more than three notes
+
+User submits invalid note spelling            Reject invalid note spelling
+
+User submits valid notes with no match        Display no matching chord message
+```
+
+### Maintain Chord Formula BDD Traceability
+
+```text
+Use Case: Maintain Chord Formula
+
+Behavior                                      BDD Scenario
+---------------------------------------------------------------------------
+Administrator defines chord formula           Future searches use newly defined formula
+
+Administrator edits chord formula             Future searches use revised formula
+
+Administrator deletes chord formula           Future searches no longer use deleted formula
+
+Administrator submits invalid formula info    Reject invalid formula information
+```
+
+### BDD Scenario Examples
+
+```gherkin
+Feature: Find Chord
+
+Scenario: Identify a major chord
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "D G B"
+  Then the system should display "G maj"
+
+Scenario: Identify a minor chord
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "C Eb G"
+  Then the system should display "C min"
+
+Scenario: Identify multiple augmented chords
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "B D# G"
+  Then the system should display "B aug"
+  And the system should display "D# aug"
+  And the system should display "G aug"
+
+Scenario: Reject fewer than three notes
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "C G"
+  Then the system should display an invalid note count message
+
+Scenario: Reject more than three notes
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "C E G B"
+  Then the system should display an invalid note count message
+
+Scenario: Reject invalid note spelling
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "C H G"
+  Then the system should display an invalid note message
+
+Scenario: Display no matching chord
+  Given the Chord Finder System has default chord formulas
+  When the Chord Finder User submits "C D E"
+  Then the system should display a no matching chord message
+```
+
+```gherkin
+Feature: Maintain Chord Formula
+
+Scenario: Administrator defines a chord formula
+  Given the Chord Finder System has default chord formulas
+  When the Administrator defines a chord formula with quality "Suspended Fourth", suffix "sus4", root-to-third 5, and root-to-fifth 7
+  And the Chord Finder User submits "C F G"
+  Then the system should display "C sus4"
+
+Scenario: Administrator edits a chord formula
+  Given the Chord Finder System has a chord formula with quality "Suspended Fourth"
+  When the Administrator edits the chord formula suffix to "sus"
+  And the Chord Finder User submits "C F G"
+  Then the system should display "C sus"
+
+Scenario: Administrator deletes a chord formula
+  Given the Chord Finder System has default chord formulas
+  When the Administrator deletes the "Minor" chord formula
+  And the Chord Finder User submits "C Eb G"
+  Then the system should display a no matching chord message
+```
+
+## TDD Traceability to Methods
+
+TDD was used to test the individual methods and classes that implement the system behavior. The unit tests verify note validation, pitch position mapping, interval calculation, formula matching, chord identification, no-match handling, and administrator formula maintenance.
+
+```text
+Class / Method                                               Unit Test
+------------------------------------------------------------------------------------------------
+Note.from(noteText : String)                                 shouldCreateValidNote
+
+Note.from(noteText : String)                                 shouldTreatLowercaseInputAsValid
+
+Note.from(noteText : String)                                 shouldRejectInvalidNoteSpelling
+
+Note.getPitchPosition()                                      shouldMapEnharmonicNotesToSamePitchPosition
+
+Note.distanceTo(otherNote : Note)                            shouldCalculateDistanceBetweenNotes
+
+ChordFormula.matchesNotes(rootNote, submittedNotes)          majorFormulaShouldMatchMajorTriad
+
+ChordFormula.matchesNotes(rootNote, submittedNotes)          minorFormulaShouldMatchMinorTriad
+
+ChordFormula.matchesNotes(rootNote, submittedNotes)          majorFormulaShouldNotMatchMinorTriad
+
+ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyGMajorFromNotesInAnyOrder
+
+ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyCMinor
+
+ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyMultipleAugmentedChords
+
+ChordFinderSystem.identifyChord(submittedNoteText)           shouldReturnEmptyListWhenNoChordMatches
+
+ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectFewerThanThreeNotes
+
+ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectMoreThanThreeNotes
+
+ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectInvalidNoteSpelling
+
+ChordFinderSystem.defineChordFormula(formula)                shouldUseNewFormulaAfterAdministratorDefinesFormula
+
+ChordFinderSystem.editChordFormula(qualityName, formula)     shouldUseRevisedFormulaAfterAdministratorEditsFormula
+
+ChordFinderSystem.deleteChordFormula(qualityName)            shouldNotUseFormulaAfterAdministratorDeletesFormula
+
+Chord.getChordName()                                         shouldReturnFormattedChordName
+```
+
+### Traceability Summary
+
+```text
+Use Case Behavior
+        ↓
+BDD Scenario
+        ↓
+Class / Method
+        ↓
+TDD Unit Test
+```
+
+The traceability shows that each required behavior is connected to a use case, each use case is covered by BDD scenarios, and each scenario is supported by tested class methods. This creates a clear path from requirements to design, implementation, and automated verification.
 
 ## Installation
 
