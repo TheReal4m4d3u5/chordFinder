@@ -1,3 +1,4 @@
+package chordfinder;
 import java.util.*;
 
 public class ChordFormula {
