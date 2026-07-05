@@ -210,11 +210,7 @@ Main
 + runChordFinderUser(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
 + runAdministratorLogin(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
 + runAdministratorMenu(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
-+ defineChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
-+ editChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
-+ deleteChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
-+ viewChordFormulas(chordFinderSystem : ChordFinderSystem) : void
-+ readChordFormula(scanner : Scanner) : ChordFormula
+
 
 ### Relationships
 
