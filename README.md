@@ -79,7 +79,7 @@ This domain model keeps the system focused on the objects needed to support the 
 
 
 
-![alt text](assets/image.png)
+![alt text](image-5.png)
 
 
 ## Use Cases
