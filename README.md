@@ -127,15 +127,20 @@ The Administrator maintains the chord formulas used by future chord searches. Th
 
 Main flow:
 
-![alt text](assets/image-4.png)
-
-
 Supported actions:
 
 - Define Chord Formula
 - Edit Chord Formula
 - Delete Chord Formula
 - View Chord Formulas
+
+
+![alt text](image-1.png)
+![alt text](image-2.png)
+![alt text](image.png)
+![alt text](image-4.png)
+
+
 
 ## UML Class Diagram
 
