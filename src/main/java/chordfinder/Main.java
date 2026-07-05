@@ -86,7 +86,7 @@ public class Main {
         System.out.println();
         System.out.println("Administrator Login");
         System.out.println("-------------------");
-        System.out.print("Enter administrator password: ");
+        System.out.print("Enter administrator password (admin123): ");
 
         String password = scanner.nextLine();
 

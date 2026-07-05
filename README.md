@@ -1,4 +1,4 @@
-# chordFinder
+# ChordFinder
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -79,27 +79,17 @@ This domain model keeps the system focused on the objects needed to support the 
 
 
 
-
-
-
-![alt text](image.png)
-
-
-
-
-
-
-
+![alt text](assets/image.png)
 
 
 ## Use Cases
 
 The primary use cases in the ChordFinder application are Find Chord and Maintain Chord Formula.
 
-![alt text](image-14.png)
 
 
 
+![alt text](assets/image-14.png)
 
 
 
@@ -111,7 +101,7 @@ Primary Actor: Chord Finder User
 
 The Chord Finder User enters exactly three notes and submits them for chord identification. The system validates the notes, compares them against the available chord formulas, and displays all matching chord names.
 
-![alt text](image-3.png)
+![alt text](assets/image-3.png)
 
 Alternative flows:
 
@@ -129,7 +119,8 @@ The Administrator maintains the chord formulas used by future chord searches. Th
 
 Main flow:
 
-![alt text](image-4.png)
+![alt text](assets/image-4.png)
+
 
 Supported actions:
 
@@ -140,8 +131,7 @@ Supported actions:
 
 ## UML Class Diagram
 
-![alt text](image-5.png)
-
+![alt text](assets/image-5.png)
 
 ### Classes
 
@@ -247,28 +237,14 @@ The core application flow is:
 
 
 
-
-
-
-![alt text](image-6.png)
-
-![alt text](image-7.png)
-
-![alt text](image-8.png)
-
-
-![alt text](image-9.png)
-
-![alt text](image-10.png)
-
-![alt text](image-11.png)
-
-
-![alt text](image-12.png)
-
-![alt text](image-13.png)
-
-
+![alt text](assets/image-6.png)
+![alt text](assets/image-7.png)
+![alt text](assets/image-8.png)
+![alt text](assets/image-9.png)
+![alt text](assets/image-10.png)
+![alt text](assets/image-11.png)
+![alt text](assets/image-12.png)
+![alt text](assets/image-13.png)
 
 
 
