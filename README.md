@@ -106,8 +106,6 @@ The Chord Finder User enters exactly three notes and submits them for chord iden
 
 ![alt text](assets/image16.png)
 
-![alt text](image.png)
-
 
 ![alt text](assets/image17.png)
 
