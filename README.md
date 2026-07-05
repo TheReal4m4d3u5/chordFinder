@@ -26,7 +26,7 @@ Overall, the project moved from requirements analysis, to use case modeling, to 
 
 ## Table of Contents
 
-- [chordFinder](#chordfinder)
+- [ChordFinder](#chordfinder)
   - [Description](#description)
   - [Design Process](#design-process)
   - [Table of Contents](#table-of-contents)
@@ -101,7 +101,15 @@ Primary Actor: Chord Finder User
 
 The Chord Finder User enters exactly three notes and submits them for chord identification. The system validates the notes, compares them against the available chord formulas, and displays all matching chord names.
 
-![alt text](assets/image-3.png)
+
+![alt text](assets/image15.png)
+
+![alt text](assets/image16.png)
+
+![alt text](image.png)
+
+
+![alt text](assets/image17.png)
 
 Alternative flows:
 
