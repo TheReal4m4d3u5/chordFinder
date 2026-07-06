@@ -1,100 +1,118 @@
 package chordfinder;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChordFinderSystem {
-    private final List<ChordFormula> chordFormulas;
+    private ChordFormulaCatalog chordFormulaCatalog;
+    private List<Note> submittedNotes;
+    private List<Chord> identifiedChords;
+    private String resultMessage;
 
     public ChordFinderSystem() {
-        this.chordFormulas = new ArrayList<>();
-        loadStandardFormulas();
-    }
-
-    private void loadStandardFormulas() {
-        chordFormulas.add(new ChordFormula("Major", "maj", 4, 7));
-        chordFormulas.add(new ChordFormula("Minor", "min", 3, 7));
-        chordFormulas.add(new ChordFormula("Augmented", "aug", 4, 8));
-        chordFormulas.add(new ChordFormula("Diminished", "dim", 3, 6));
+        this.chordFormulaCatalog = new ChordFormulaCatalog();
+        this.submittedNotes = new ArrayList<>();
+        this.identifiedChords = new ArrayList<>();
+        this.resultMessage = "";
     }
 
     public List<Chord> identifyChord(String submittedNoteText) {
-        List<Note> notes = parseNotes(submittedNoteText);
-        List<Chord> matchingChords = new ArrayList<>();
-        Set<String> chordNamesAlreadyFound = new LinkedHashSet<>();
+        submittedNotes = validateNotes(submittedNoteText);
+        identifiedChords.clear();
 
-        for (Note possibleRoot : notes) {
-            for (ChordFormula formula : chordFormulas) {
-                if (formula.matches(possibleRoot, notes)) {
-                    Chord chord = new Chord(possibleRoot, formula, notes);
+        if (submittedNotes.isEmpty()) {
+            resultMessage = "Invalid note entry.";
+            return identifiedChords;
+        }
 
-                    if (!chordNamesAlreadyFound.contains(chord.getChordName())) {
-                        matchingChords.add(chord);
-                        chordNamesAlreadyFound.add(chord.getChordName());
-                    }
+        List<ChordFormula> formulas = chordFormulaCatalog.getChordFormulas();
+
+        for (Note rootNote : submittedNotes) {
+            for (ChordFormula formula : formulas) {
+                if (formula.matchesNotes(rootNote, submittedNotes)) {
+                    Chord chord = new Chord(rootNote, formula, submittedNotes);
+                    identifiedChords.add(chord);
                 }
             }
         }
 
-        return matchingChords;
+        if (identifiedChords.isEmpty()) {
+            resultMessage = "No matching chord found.";
+        } else {
+            resultMessage = "Matching chord found.";
+        }
+
+        return identifiedChords;
     }
 
-    private List<Note> parseNotes(String submittedNoteText) {
+    public List<Note> validateNotes(String submittedNoteText) {
+        List<Note> validNotes = new ArrayList<>();
+
         if (submittedNoteText == null || submittedNoteText.isBlank()) {
-            throw new IllegalArgumentException("Please enter exactly three notes.");
+            return validNotes;
         }
 
         String[] noteTexts = submittedNoteText.trim().split("\\s+");
 
-        if (noteTexts.length < 3) {
-            throw new IllegalArgumentException("Please enter exactly three notes. Fewer than three notes were entered.");
+        if (noteTexts.length != 3) {
+            return validNotes;
         }
-
-        if (noteTexts.length > 3) {
-            throw new IllegalArgumentException("Please enter exactly three notes. More than three notes were entered.");
-        }
-
-        List<Note> notes = new ArrayList<>();
 
         for (String noteText : noteTexts) {
-            notes.add(Note.from(noteText));
-        }
-
-        return notes;
-    }
-
-    public void addFormula(ChordFormula formula) {
-        if (findFormula(formula.getQualityName()) != null) {
-            throw new IllegalArgumentException("A formula with that quality name already exists.");
-        }
-
-        chordFormulas.add(formula);
-    }
-
-    public void editFormula(String qualityName, ChordFormula revisedFormula) {
-        deleteFormula(qualityName);
-        chordFormulas.add(revisedFormula);
-    }
-
-    public boolean deleteFormula(String qualityName) {
-        ChordFormula formula = findFormula(qualityName);
-
-        if (formula == null) {
-            return false;
-        }
-
-        return chordFormulas.remove(formula);
-    }
-
-    public ChordFormula findFormula(String qualityName) {
-        for (ChordFormula formula : chordFormulas) {
-            if (formula.getQualityName().equalsIgnoreCase(qualityName)) {
-                return formula;
+            if (!Note.isValid(noteText)) {
+                return new ArrayList<>();
             }
+
+            validNotes.add(Note.from(noteText));
         }
 
-        return null;
+        return validNotes;
+    }
+
+    public void defineChordFormula(ChordFormula formula) {
+        chordFormulaCatalog.defineChordFormula(formula);
+        resultMessage = "Chord formula added.";
+    }
+
+    public void editChordFormula(String qualityName, ChordFormula revisedFormula) {
+        boolean updated = chordFormulaCatalog.editChordFormula(qualityName, revisedFormula);
+
+        if (updated) {
+            resultMessage = "Chord formula updated.";
+        } else {
+            resultMessage = "Chord formula not found.";
+        }
+    }
+
+    public boolean deleteChordFormula(String qualityName) {
+        boolean deleted = chordFormulaCatalog.deleteChordFormula(qualityName);
+
+        if (deleted) {
+            resultMessage = "Chord formula deleted.";
+        } else {
+            resultMessage = "Chord formula not found.";
+        }
+
+        return deleted;
     }
 
     public List<ChordFormula> getChordFormulas() {
-        return Collections.unmodifiableList(chordFormulas);
+        return chordFormulaCatalog.getChordFormulas();
+    }
+
+    public void displayResult() {
+        System.out.println(resultMessage);
+
+        for (Chord chord : identifiedChords) {
+            System.out.println(chord.getChordName());
+        }
+    }
+
+    public ChordFormulaCatalog getChordFormulaCatalog() {
+        return chordFormulaCatalog;
+    }
+
+    public String getResultMessage() {
+        return resultMessage;
     }
 }

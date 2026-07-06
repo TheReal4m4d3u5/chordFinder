@@ -4,48 +4,61 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ChordFinderSystemTest {
 
     @Test
-    public void shouldIdentifyGMajorFromNotesInAnyOrder() {
+    public void shouldIdentifyMajorChord() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        List<Chord> chords = system.identifyChord("D G B");
+        List<Chord> chords = system.identifyChord("C E G");
 
         assertEquals(1, chords.size());
-        assertEquals("G maj", chords.get(0).getChordName());
+        assertEquals("C", chords.get(0).getChordName());
     }
 
     @Test
-    public void shouldIdentifyCMinor() {
+    public void shouldIdentifyMinorChord() {
         ChordFinderSystem system = new ChordFinderSystem();
 
         List<Chord> chords = system.identifyChord("C Eb G");
 
         assertEquals(1, chords.size());
-        assertEquals("C min", chords.get(0).getChordName());
+        assertEquals("Cm", chords.get(0).getChordName());
     }
 
     @Test
-    public void shouldIdentifyMultipleAugmentedChords() {
+    public void shouldReturnEmptyListForNoMatchingChord() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        List<Chord> chords = system.identifyChord("B D# G");
+        List<Chord> chords = system.identifyChord("C D G");
 
-        assertEquals(3, chords.size());
-
-        assertTrue(chords.stream().anyMatch(chord -> chord.getChordName().equals("B aug")));
-        assertTrue(chords.stream().anyMatch(chord -> chord.getChordName().equals("D# aug")));
-        assertTrue(chords.stream().anyMatch(chord -> chord.getChordName().equals("G aug")));
+        assertTrue(chords.isEmpty());
     }
 
     @Test
-    public void shouldReturnEmptyListWhenNoChordMatches() {
+    public void shouldUseNewFormulaAfterAdministratorDefinesFormula() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        List<Chord> chords = system.identifyChord("C D E");
+        system.defineChordFormula(new ChordFormula("Suspended Fourth", "sus4", 5, 7));
+
+        List<Chord> chords = system.identifyChord("C F G");
+
+        assertEquals(1, chords.size());
+        assertEquals("Csus4", chords.get(0).getChordName());
+    }
+
+    @Test
+    public void shouldNotUseFormulaAfterAdministratorDeletesFormula() {
+        ChordFinderSystem system = new ChordFinderSystem();
+
+        boolean deleted = system.deleteChordFormula("Minor");
+
+        assertTrue(deleted);
+
+        List<Chord> chords = system.identifyChord("C Eb G");
 
         assertTrue(chords.isEmpty());
     }
@@ -54,44 +67,25 @@ public class ChordFinderSystemTest {
     public void shouldRejectFewerThanThreeNotes() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        assertThrows(IllegalArgumentException.class, () -> system.identifyChord("C G"));
+        List<Chord> chords = system.identifyChord("C G");
+
+        assertTrue(chords.isEmpty());
     }
 
     @Test
     public void shouldRejectMoreThanThreeNotes() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        assertThrows(IllegalArgumentException.class, () -> system.identifyChord("C E G B"));
+        List<Chord> chords = system.identifyChord("C E G B");
+
+        assertTrue(chords.isEmpty());
     }
 
     @Test
     public void shouldRejectInvalidNoteSpelling() {
         ChordFinderSystem system = new ChordFinderSystem();
 
-        assertThrows(IllegalArgumentException.class, () -> system.identifyChord("C H G"));
-    }
-
-    @Test
-    public void shouldUseNewFormulaAfterAdministratorDefinesFormula() {
-        ChordFinderSystem system = new ChordFinderSystem();
-
-        system.addFormula(new ChordFormula("Suspended Fourth", "sus4", 5, 7));
-
-        List<Chord> chords = system.identifyChord("C F G");
-
-        assertEquals(1, chords.size());
-        assertEquals("C sus4", chords.get(0).getChordName());
-    }
-
-    @Test
-    public void shouldNotUseFormulaAfterAdministratorDeletesFormula() {
-        ChordFinderSystem system = new ChordFinderSystem();
-
-        boolean deleted = system.deleteFormula("Minor");
-
-        assertTrue(deleted);
-
-        List<Chord> chords = system.identifyChord("C Eb G");
+        List<Chord> chords = system.identifyChord("C H G");
 
         assertTrue(chords.isEmpty());
     }

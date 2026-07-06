@@ -1,23 +1,23 @@
 package chordfinder;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Chord {
-    private final Note rootNote;
-    private final ChordFormula chordFormula;
-    private final List<Note> notes;
+    private Note rootNote;
+    private ChordFormula chordFormula;
+    private List<Note> notes;
+    private String chordName;
 
     public Chord(Note rootNote, ChordFormula chordFormula, List<Note> notes) {
-        if (notes.size() != 3) {
-            throw new IllegalArgumentException("A chord must contain exactly three notes.");
-        }
-
         this.rootNote = rootNote;
         this.chordFormula = chordFormula;
         this.notes = new ArrayList<>(notes);
+        this.chordName = rootNote.getSpelling() + chordFormula.getDisplaySuffix();
     }
 
     public String getChordName() {
-        return rootNote.getSpelling() + " " + chordFormula.getDisplaySuffix();
+        return chordName;
     }
 
     public Note getRootNote() {
@@ -29,11 +29,6 @@ public class Chord {
     }
 
     public List<Note> getNotes() {
-        return Collections.unmodifiableList(notes);
-    }
-
-    @Override
-    public String toString() {
-        return getChordName();
+        return new ArrayList<>(notes);
     }
 }
