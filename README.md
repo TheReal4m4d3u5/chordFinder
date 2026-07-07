@@ -138,10 +138,10 @@ Supported actions:
 - View Chord Formulas
 
 
-![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image.png)
-
+![alt text](image-19.png)
+![alt text](image-20.png)
+![alt text](image-18.png)
+![alt text](image-17.png)
 
 
 
