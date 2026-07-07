@@ -384,7 +384,9 @@ Scenario: Identify multiple augmented chords from B D# G
 Given the Chord Finder system has a maintained augmented chord formula
 When the user submits B D# G
 Then the system validates the submitted notes
-And the system identifies multiple matching augmented chords
+And the system identifies Baug as a matching chord
+And the system identifies D#aug as a matching chord
+And the system identifies Gaug as a matching chord
 
 Scenario: Reject fewer than three notes
 
@@ -407,6 +409,13 @@ When the user submits C H G
 Then the system rejects the submitted notes
 And the system displays an invalid note entry message
 
+Scenario: Reject blank note input
+
+Given the user is using the Chord Finder system
+When the user submits blank note input
+Then the system rejects the submitted notes
+And the system displays an invalid note entry message
+
 Scenario: Display no matching chord message
 
 Given the Chord Finder system has maintained chord formulas
@@ -415,28 +424,27 @@ Then the system validates the submitted notes
 And the system does not identify a matching chord
 And the system displays a no matching chord message
 
-Feature: Maintain Chord Formula
+Scenario: Display no matching chord for duplicate notes
 
-Scenario: Add suspended fourth formula
+Given the Chord Finder system has maintained chord formulas
+When the user submits C C G
+Then the system validates the submitted notes
+And the system does not identify a matching chord
+And the system displays a no matching chord message
 
-Given the administrator is maintaining chord formulas
-When the administrator defines a suspended fourth formula
-Then the system adds the new formula to the ChordFormulaCatalog
-And the formula becomes available for chord identification
+Scenario: Identify chord using flat note spelling
 
-Scenario: Edit existing chord formula values
+Given the Chord Finder system has a maintained major chord formula
+When the user submits Db F Ab
+Then the system validates the submitted notes
+And the system identifies Db as a matching chord
 
-Given the ChordFormulaCatalog contains an existing chord formula
-When the administrator edits the formula values
-Then the system updates the existing ChordFormula
-And the revised formula is stored in the ChordFormulaCatalog
+Scenario: Identify chord using sharp note spelling
 
-Scenario: Delete minor chord formula
-
-Given the ChordFormulaCatalog contains a minor chord formula
-When the administrator deletes the minor chord formula
-Then the system removes the formula from the ChordFormulaCatalog
-And the deleted formula is no longer available for chord identification
+Given the Chord Finder system has a maintained major chord formula
+When the user submits C# F G#
+Then the system validates the submitted notes
+And the system identifies C# as a matching chord
 
 Scenario: View maintained chord formula list
 
@@ -444,6 +452,18 @@ Given the administrator is maintaining chord formulas
 When the administrator selects view chord formulas
 Then the system retrieves the maintained chord formulas
 And the system displays the chord formula list
+
+Scenario: View newly added formula in formula list
+
+Given the administrator has added a suspended fourth formula
+When the administrator views maintained chord formulas
+Then the system displays the suspended fourth formula in the chord formula list
+
+Scenario: Confirm deleted formula is removed from list
+
+Given the administrator has deleted the minor chord formula
+When the administrator views maintained chord formulas
+Then the system does not display the minor chord formula in the chord formula list
 
 Scenario: Identify chord using newly added formula
 
@@ -466,13 +486,19 @@ When the user submits notes that match the updated formula
 Then the system uses the updated formula during chord identification
 And the system returns the matching chord result
 
-Scenario: Display formula not found message
+Scenario: Display formula not found when editing
 
 Given the administrator is maintaining chord formulas
-When the administrator tries to edit or delete a formula that does not exist
+When the administrator tries to edit a formula that does not exist
 Then the system does not update the ChordFormulaCatalog
 And the system displays a formula not found message
 
+Scenario: Display formula not found when deleting
+
+Given the administrator is maintaining chord formulas
+When the administrator tries to delete a formula that does not exist
+Then the system does not update the ChordFormulaCatalog
+And the system displays a formula not found message
 
 ## TDD Traceability to Methods
 
