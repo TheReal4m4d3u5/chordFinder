@@ -107,12 +107,12 @@ Primary Actor: Chord Finder User
 The Chord Finder User enters exactly three notes and submits them for chord identification. The system validates the notes, compares them against the available chord formulas, and displays all matching chord names.
 
 
-![alt text](assets/image15.png)
+![alt text](image-15.png)
 
-![alt text](assets/image16.png)
+![alt text](image-16.png)
 
+![alt text](image-13.png)
 
-![alt text](assets/image17.png)
 
 Alternative flows:
 
@@ -141,7 +141,7 @@ Supported actions:
 ![alt text](image-1.png)
 ![alt text](image-2.png)
 ![alt text](image.png)
-![alt text](image-13.png)
+
 
 
 
@@ -587,7 +587,7 @@ The traceability shows that each required behavior is connected to a use case, e
 
 Before running the application, make sure the following software is installed:
 
-- Java Development Kit (JDK) 17 or later
+- Java Development Kit (JDK) 25 or later
 - Maven
 - Git
 - Eclipse, IntelliJ IDEA, VS Code, or another Java-compatible IDE
