@@ -14,15 +14,17 @@ The project includes both JUnit unit tests and Cucumber BDD tests. The JUnit tes
 
 ## Design Process
 
-I used an object-oriented design approach by first understanding the Chord Finder problem domain before writing code. I identified the major behaviors the system needed to support: a Chord Finder User can identify chords from submitted notes, and an Administrator can maintain chord formulas.
+I used an object-oriented design approach by first understanding the Chord Finder problem domain before writing code. I identified the major behaviors the system needed to support: a Chord Finder User can submit notes to identify possible chords, and an Administrator can maintain the chord formulas used by the system.
 
-The development process started with noun analysis and domain modeling. I reviewed the requirements and extracted important nouns such as ChordFinderSystem, ChordFormula, Chord, Note, chord name, pitch position, chord quality, administrator, and chord finder user. I then validated each noun by asking whether it represented a meaningful object with state and behavior.
+The development process started with noun analysis and domain modeling. I reviewed the requirements and extracted important nouns such as ChordFinderSystem, ChordFormulaCatalog, ChordFormula, Chord, Note, chord name, pitch position, chord quality, administrator, and chord finder user. I then evaluated each noun by asking whether it represented a meaningful object with state, behavior, and responsibility within the system.
 
-The final domain model focused on four main classes: ChordFinderSystem, ChordFormula, Chord, and Note. Supporting ideas such as pitch position, sharp-oriented name, flat-oriented name, chord quality, and display suffix were treated as attributes rather than separate classes.
+The final domain model focused on five main classes: ChordFinderSystem, ChordFormulaCatalog, ChordFormula, Chord, and Note. Supporting ideas such as chord name, pitch position, formula intervals, chord quality, and display suffix were treated as attributes rather than separate classes. Actors such as Chord Finder User and Administrator were not modeled as domain classes because they interact with the system but are not objects the system needs to store or manage.
 
-Each class was designed with one main responsibility. Note handles spelling, pitch position, validation, and interval distance. ChordFormula stores the formula pattern and determines whether notes match that pattern. Chord represents an identified chord name using a root note and formula. ChordFinderSystem coordinates the application by validating notes, identifying chords, and maintaining formulas.
+Each class was designed with a clear responsibility. Note handles note spelling, pitch position, validation, and interval distance. ChordFormula stores a chord pattern, quality, and suffix used to determine whether submitted notes match a formula. Chord represents an identified chord result using a root note and matching formula. ChordFormulaCatalog manages the collection of maintained formulas, including adding, editing, deleting, and viewing formulas. ChordFinderSystem coordinates the overall application by validating submitted notes, identifying chords, and using the formula catalog to maintain chord definitions.
 
-Overall, the project moved from requirements analysis, to use case modeling, to domain modeling, to Java implementation, and then to automated testing with JUnit and Cucumber BDD.
+The design was refined through use case modeling, sequence diagrams, and traceability between requirements, design, implementation, and tests. The implementation was then completed in Java, with automated testing using JUnit for unit tests and Cucumber BDD scenarios for behavior-level validation.
+
+Overall, the project moved from requirements analysis, to noun analysis, to domain modeling, to use case and sequence modeling, to Java implementation, and finally to automated testing. This process helped keep the code aligned with the original Chord Finder requirements while still allowing the design to support future changes to chord formulas.
 
 ## Table of Contents
 
@@ -256,12 +258,19 @@ The core application flow is:
 
 
 ![alt text](assets/image-6.png)
+
 ![alt text](assets/image-7.png)
+
 ![alt text](assets/image-8.png)
+
 ![alt text](assets/image-9.png)
+
 ![alt text](assets/image-10.png)
+
 ![alt text](assets/image-11.png)
+
 ![alt text](assets/image-12.png)
+
 ![alt text](assets/image-13.png)
 
 
