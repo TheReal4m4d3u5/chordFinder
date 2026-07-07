@@ -30,53 +30,60 @@ Overall, the project moved from requirements analysis, to use case modeling, to 
   - [Description](#description)
   - [Design Process](#design-process)
   - [Table of Contents](#table-of-contents)
+  - [Noun Analysis](#noun-analysis)
   - [Domain Modeling](#domain-modeling)
   - [Use Cases](#use-cases)
     - [Find Chord](#find-chord)
     - [Maintain Chord Formula](#maintain-chord-formula)
   - [UML Class Diagram](#uml-class-diagram)
     - [Classes](#classes)
-  - [ChordFinderSystem](#chordfindersystem)
-  - [ChordFormula](#chordformula)
-  - [Chord](#chord)
-  - [Note](#note)
-  - [Main](#main)
-    - [Relationships](#relationships)
   - [Application Flow](#application-flow)
   - [Design Decisions](#design-decisions)
   - [Object-Oriented Design Principles](#object-oriented-design-principles)
   - [BDD Traceability to Use Cases](#bdd-traceability-to-use-cases)
     - [Find Chord BDD Traceability](#find-chord-bdd-traceability)
+  - [Behavior                                      BDD Scenario](#behavior--------------------------------------bdd-scenario)
     - [Maintain Chord Formula BDD Traceability](#maintain-chord-formula-bdd-traceability)
-    - [BDD Scenario Examples](#bdd-scenario-examples)
+  - [Behavior                                      BDD Scenario](#behavior--------------------------------------bdd-scenario-1)
+    - [BDD Scenarios](#bdd-scenarios)
   - [TDD Traceability to Methods](#tdd-traceability-to-methods)
+  - [Class / Method                                      TDD Test](#class--method--------------------------------------tdd-test)
     - [Traceability Summary](#traceability-summary)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Clone the Project](#clone-the-project)
 
+
+## Noun Analysis 
+
+![alt text](image-11.png)
+
+
+
+
 ## Domain Modeling
 
-The domain model was created by identifying the objects that exist in the Chord Finder system universe and validating whether each object has meaningful state and behavior.
+The domain model was created by identifying the meaningful entities that exist in the Chord Finder system universe and validating whether each object has meaningful state and behavior.
 
 The core domain objects are:
 
 ChordFinderSystem  
+ChordFormulaCatalog  
 ChordFormula  
 Chord  
 Note  
 
-ChordFinderSystem represents the main application. It owns the current set of chord formulas, validates submitted notes, identifies matching chords, and supports administrator formula maintenance.
+ChordFinderSystem represents the main application object that coordinates the system behavior. It receives submitted note text, validates the notes, identifies matching chords, stores the submitted notes, stores the identified chord results, and provides access to formula maintenance behavior through the ChordFormulaCatalog. The ChordFinderSystem does not represent one chord or one formula; it represents the overall system that controls the chord-finding process.
 
-ChordFormula represents a maintained formula definition. It stores a chord quality name, display suffix, and interval values such as root-to-third and root-to-fifth. The formula determines whether a submitted set of notes matches a chord type.
+ChordFormulaCatalog represents the maintained collection of chord formulas used by the system. It owns the list of ChordFormula objects and is responsible for adding, editing, deleting, finding, and returning chord formulas. This separates formula maintenance from the main ChordFinderSystem so the system can coordinate the use cases while the catalog manages the formula collection.
 
-Chord represents an identified chord. It has a root note, a chord formula, and a generated chord name such as C maj, C min, G aug, or D# aug.
+ChordFormula represents one maintained chord formula definition. It stores the chord quality name, display suffix, and interval values such as root-to-third and root-to-fifth. A ChordFormula is responsible for determining whether a submitted set of notes matches that formula by comparing pitch distances from a possible root note.
 
-Note represents a submitted or recognized musical note. It stores the note spelling, pitch position, sharp-oriented name, flat-oriented name, and other recognized names. It also supports note validation and distance calculation between pitch positions.
+Chord represents an identified chord result. It contains the root note, the chord formula that matched, the notes used to identify the chord, and the generated chord name. For example, if the submitted notes match a C major formula, the Chord object represents the identified result such as C, Cm, Cdim, or Caug depending on the matching formula.
+
+Note represents a submitted or recognized musical note. It stores the note spelling, pitch position, sharp-oriented name, flat-oriented name, and other recognized names. Note is responsible for validating note text, creating Note objects from submitted input, and calculating the distance between pitch positions so chord formulas can determine matches.
 
 This domain model keeps the system focused on the objects needed to support the required behavior without adding unnecessary classes for simple values or out-of-scope music theory concepts.
-
-
 
 
 ![alt text](image-5.png)
@@ -87,11 +94,7 @@ This domain model keeps the system focused on the objects needed to support the 
 The primary use cases in the ChordFinder application are Find Chord and Maintain Chord Formula.
 
 
-
-
 ![alt text](assets/image-14.png)
-
-
 
 
 
@@ -142,13 +145,13 @@ Supported actions:
 
 ## UML Class Diagram
 
-![alt text](assets/image-5.png)
+![alt text](image-10.png)
 
 ### Classes
 
-ChordFinderSystem
------------------
-- chordFormulas : List<ChordFormula>
+Class: ChordFinderSystem
+
+- chordFormulaCatalog : ChordFormulaCatalog
 - submittedNotes : List<Note>
 - identifiedChords : List<Chord>
 - resultMessage : String
@@ -160,9 +163,21 @@ ChordFinderSystem
 + deleteChordFormula(qualityName : String) : boolean
 + getChordFormulas() : List<ChordFormula>
 + displayResult() : void
++ getChordFormulaCatalog() : ChordFormulaCatalog
++ getResultMessage() : String
 
-ChordFormula
-------------
+Class: ChordFormulaCatalog
+
+- chordFormulas : List<ChordFormula>
+
++ defineChordFormula(formula : ChordFormula) : void
++ editChordFormula(qualityName : String, revisedFormula : ChordFormula) : boolean
++ deleteChordFormula(qualityName : String) : boolean
++ getChordFormulas() : List<ChordFormula>
++ findFormula(qualityName : String) : ChordFormula
+
+Class: ChordFormula
+
 - qualityName : String
 - displaySuffix : String
 - rootToThird : int
@@ -175,8 +190,8 @@ ChordFormula
 + getRootToThird() : int
 + getRootToFifth() : int
 
-Chord
------
+Class: Chord
+
 - rootNote : Note
 - chordFormula : ChordFormula
 - notes : List<Note>
@@ -187,8 +202,8 @@ Chord
 + getChordFormula() : ChordFormula
 + getNotes() : List<Note>
 
-Note
-----
+Class: Note
+
 - spelling : String
 - pitchPosition : int
 - sharpName : String
@@ -205,23 +220,19 @@ Note
 + getFlatName() : String
 + getOtherNames() : List<String>
 
-Main
-----
+Class: Main
+
 - ADMIN_PASSWORD : String
 
 + main(args : String[]) : void
 + runChordFinderUser(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
 + runAdministratorLogin(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
 + runAdministratorMenu(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
-
-
-### Relationships
-
-ChordFinderSystem has a ChordFormula enttiy
-
-ChordFormula identifies Chord
-
-Chord has a root Note
++ defineChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
++ editChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
++ deleteChordFormula(scanner : Scanner, chordFinderSystem : ChordFinderSystem) : void
++ viewChordFormulas(chordFinderSystem : ChordFinderSystem) : void
++ readChordFormula(scanner : Scanner) : ChordFormula
 
 
 ## Application Flow
@@ -257,41 +268,58 @@ The core application flow is:
 
 ## Design Decisions
 
-I designed ChordFinder around the main domain objects instead of putting all behavior into one large procedural class. The goal was to make the code reflect the real problem domain.
+The design keeps the Chord Finder system focused on the required behavior: identifying possible chord names from three submitted notes and allowing an administrator to maintain chord formulas.
 
-I kept ChordFinderSystem as the main coordinating class because the system needs one object responsible for validating notes, using formulas, identifying chords, and maintaining formulas.
+A separate ChordFormulaCatalog class was added to manage the collection of chord formulas. This keeps formula maintenance responsibilities, such as adding, editing, deleting, finding, and returning formulas, separate from the main ChordFinderSystem.
 
-I kept ChordFormula as a separate class because formulas are maintained by the administrator and are used by future chord searches. Each formula has its own quality name, display suffix, and interval pattern.
+ChordFormula was kept as its own class because it represents one chord definition, such as major, minor, diminished, or augmented. It stores the formula name, display suffix, and interval values used to determine whether submitted notes match that chord type.
 
-I kept Chord as a separate class because the system identifies chords, not just text names. A chord has a root note, formula, and generated chord name.
+Chord was kept separate from ChordFormula because a formula is only a definition, while a chord is an identified result. For example, major is a formula, but C major is an identified chord.
 
-I kept Note as a separate class because note validation and pitch position mapping are central to the system. A note is not just a string; it has spelling, pitch position, and alternate names.
+Note was modeled as its own class because notes have meaningful state and behavior. A note stores spelling and pitch position information, and it supports validation and pitch-distance calculations needed by chord formulas.
 
-I did not create separate classes for pitch position, sharp name, flat name, chord quality, or display suffix because those concepts are simple values that belong inside Note or ChordFormula.
+The system avoids unnecessary classes for simple values such as interval numbers, suffix text, or chord names. These are treated as attributes because they do not need separate behavior in the initial release.
 
-I also did not keep SearchResult as a separate class because the result behavior can be handled by ChordFinderSystem through identified chords and result messages.
+The initial release is limited to triads, so each identified chord is based on three notes. This keeps the model aligned with the client’s current requirements without adding extra complexity for seventh chords, inversions, voicings, sound playback, or advanced music theory concepts.
+
+Overall, the design separates responsibilities clearly: ChordFinderSystem coordinates the use cases, ChordFormulaCatalog manages formula storage, ChordFormula defines chord patterns, Note handles note behavior, and Chord represents the final identified result.
 
 ## Object-Oriented Design Principles
 
-ChordFinder uses encapsulation by grouping related data and behavior inside individual classes. Note contains note-related data and behavior, ChordFormula contains formula-related data and behavior, Chord contains chord result data, and ChordFinderSystem coordinates system-level behavior.
+The design uses encapsulation by keeping each class responsible for its own data and behavior. ChordFormula stores its own formula values and contains the behavior needed to determine whether notes match that formula. Note stores note information and handles note validation and pitch-distance calculations.
 
-The design uses aggregation to show that ChordFinderSystem has a collection of ChordFormula objects and that Chord is made from three Note objects. The formulas are maintained by the system, while notes and chords are created during chord identification.
+The design uses single responsibility by giving each class one main purpose. ChordFinderSystem coordinates the main system behavior. ChordFormulaCatalog manages the collection of chord formulas. ChordFormula represents one formula definition. Chord represents an identified chord result. Note represents a musical note.
 
-Association is used where objects interact without strong ownership. For example, ChordFormula is associated with Chord because a formula classifies a chord. ChordFinderSystem is associated with Note because it validates submitted notes during chord identification.
+The design uses separation of concerns by keeping formula maintenance separate from chord identification. ChordFormulaCatalog handles adding, editing, deleting, finding, and returning formulas, while ChordFinderSystem focuses on validating submitted notes and identifying chord results.
 
-The design follows high cohesion because each class has a focused responsibility. Note handles note behavior, ChordFormula handles formula behavior, Chord handles chord result behavior, and ChordFinderSystem handles coordination.
+The design uses aggregation where one object owns or manages a group of related objects. ChordFinderSystem owns one ChordFormulaCatalog, and ChordFormulaCatalog maintains many ChordFormula objects. A Chord also contains the Note objects used to identify it.
 
-The design also supports low coupling because each class interacts through clear method calls. The system can add or edit formulas without changing the Note or Chord classes.
+The design supports low coupling because classes interact through clear method calls instead of directly managing each other’s internal data. For example, ChordFinderSystem asks ChordFormulaCatalog for formulas instead of directly controlling the formula list.
+
+The design supports high cohesion because each class contains behavior that closely matches its purpose. Note handles note behavior, ChordFormula handles formula matching, ChordFormulaCatalog handles formula collection management, and Chord represents the identified result.
+
+The design avoids unnecessary classes for simple values. Items such as display suffix, interval numbers, and chord names are modeled as attributes because they do not need their own separate behavior in the initial release.
+
+Overall, the design follows object-oriented principles by organizing the system around meaningful objects with clear responsibilities, meaningful state, and behavior that supports the required use cases.
 
 
 ## BDD Traceability to Use Cases
 
-BDD was used to test the system behavior from the actor and use case perspective. The BDD scenarios connect directly to the main use cases and verify what the Chord Finder User and Administrator expect the system to do.
+The BDD tests trace directly back to the main Chord Finder use cases. Each scenario confirms that the system behavior described in the use cases is supported by the design and implementation.
+
+The Find Chord use case is covered by scenarios where a user submits three valid notes and the system identifies the correct chord. For example, when the user submits C E G, the system identifies C major. When the user submits C Eb G, the system identifies C minor. These scenarios confirm that the system can validate submitted notes, compare them against maintained chord formulas, and return matching chord names.
+
+The Find Chord use case is also covered by alternate scenarios. If the user submits invalid note input, fewer than three notes, or more than three notes, the system rejects the input and does not identify a chord. If the user submits three valid notes that do not match any maintained chord formula, the system returns no matching chord result. These scenarios trace to the validation and no-match alternate paths in the use case.
+
+The Maintain Chord Formula use case is covered by administrator scenarios for adding, editing, deleting, and viewing chord formulas. The define formula scenario confirms that a new ChordFormula can be added to the ChordFormulaCatalog and then used by the system during chord identification. The edit formula scenario confirms that an existing formula can be revised. The delete formula scenario confirms that a removed formula is no longer used to identify chords. The view formula scenario confirms that the system can return the maintained list of chord formulas.
+
+The BDD scenarios also verify the connection between the two use cases. Formula maintenance affects chord identification because the ChordFinderSystem uses the ChordFormulaCatalog when matching submitted notes. This means that adding, editing, or deleting a formula changes what chords the system can identify.
+
+Overall, the BDD tests provide traceability from the use case requirements to the system behavior. They show that the system supports the main paths and alternate paths for both finding chords and maintaining chord formulas.
+
+
 
 ### Find Chord BDD Traceability
-
-```text
-Use Case: Find Chord
 
 Behavior                                      BDD Scenario
 ---------------------------------------------------------------------------
@@ -308,134 +336,201 @@ User submits more than three notes            Reject more than three notes
 User submits invalid note spelling            Reject invalid note spelling
 
 User submits valid notes with no match        Display no matching chord message
-```
+
+
 
 ### Maintain Chord Formula BDD Traceability
 
-```text
-Use Case: Maintain Chord Formula
 
 Behavior                                      BDD Scenario
 ---------------------------------------------------------------------------
-Administrator defines chord formula           Future searches use newly defined formula
+Administrator defines new chord formula       Add suspended fourth formula
 
-Administrator edits chord formula             Future searches use revised formula
+Administrator edits existing chord formula    Edit existing chord formula values
 
-Administrator deletes chord formula           Future searches no longer use deleted formula
+Administrator deletes chord formula           Delete minor chord formula
 
-Administrator submits invalid formula info    Reject invalid formula information
-```
+Administrator views chord formulas            View maintained chord formula list
 
-### BDD Scenario Examples
+Administrator adds formula used by search     Identify chord using newly added formula
 
-```gherkin
+Administrator deletes formula used by search  Removed formula is no longer used
+
+Administrator edits formula used by search    Updated formula changes chord matching
+
+Administrator enters unknown formula name      Display formula not found message
+
+
+### BDD Scenarios 
+
 Feature: Find Chord
 
-Scenario: Identify a major chord
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "D G B"
-  Then the system should display "G maj"
+Scenario: Identify G major from D G B
 
-Scenario: Identify a minor chord
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "C Eb G"
-  Then the system should display "C min"
+Given the Chord Finder system has a maintained major chord formula
+When the user submits D G B
+Then the system validates the submitted notes
+And the system identifies G as a matching chord
 
-Scenario: Identify multiple augmented chords
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "B D# G"
-  Then the system should display "B aug"
-  And the system should display "D# aug"
-  And the system should display "G aug"
+Scenario: Identify C minor from C Eb G
+
+Given the Chord Finder system has a maintained minor chord formula
+When the user submits C Eb G
+Then the system validates the submitted notes
+And the system identifies Cm as a matching chord
+
+Scenario: Identify multiple augmented chords from B D# G
+
+Given the Chord Finder system has a maintained augmented chord formula
+When the user submits B D# G
+Then the system validates the submitted notes
+And the system identifies multiple matching augmented chords
 
 Scenario: Reject fewer than three notes
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "C G"
-  Then the system should display an invalid note count message
+
+Given the user is using the Chord Finder system
+When the user submits C E
+Then the system rejects the submitted notes
+And the system displays an invalid note entry message
 
 Scenario: Reject more than three notes
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "C E G B"
-  Then the system should display an invalid note count message
+
+Given the user is using the Chord Finder system
+When the user submits C E G B
+Then the system rejects the submitted notes
+And the system displays an invalid note entry message
 
 Scenario: Reject invalid note spelling
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "C H G"
-  Then the system should display an invalid note message
 
-Scenario: Display no matching chord
-  Given the Chord Finder System has default chord formulas
-  When the Chord Finder User submits "C D E"
-  Then the system should display a no matching chord message
-```
+Given the user is using the Chord Finder system
+When the user submits C H G
+Then the system rejects the submitted notes
+And the system displays an invalid note entry message
 
-```gherkin
+Scenario: Display no matching chord message
+
+Given the Chord Finder system has maintained chord formulas
+When the user submits C D G
+Then the system validates the submitted notes
+And the system does not identify a matching chord
+And the system displays a no matching chord message
+
 Feature: Maintain Chord Formula
 
-Scenario: Administrator defines a chord formula
-  Given the Chord Finder System has default chord formulas
-  When the Administrator defines a chord formula with quality "Suspended Fourth", suffix "sus4", root-to-third 5, and root-to-fifth 7
-  And the Chord Finder User submits "C F G"
-  Then the system should display "C sus4"
+Scenario: Add suspended fourth formula
 
-Scenario: Administrator edits a chord formula
-  Given the Chord Finder System has a chord formula with quality "Suspended Fourth"
-  When the Administrator edits the chord formula suffix to "sus"
-  And the Chord Finder User submits "C F G"
-  Then the system should display "C sus"
+Given the administrator is maintaining chord formulas
+When the administrator defines a suspended fourth formula
+Then the system adds the new formula to the ChordFormulaCatalog
+And the formula becomes available for chord identification
 
-Scenario: Administrator deletes a chord formula
-  Given the Chord Finder System has default chord formulas
-  When the Administrator deletes the "Minor" chord formula
-  And the Chord Finder User submits "C Eb G"
-  Then the system should display a no matching chord message
-```
+Scenario: Edit existing chord formula values
+
+Given the ChordFormulaCatalog contains an existing chord formula
+When the administrator edits the formula values
+Then the system updates the existing ChordFormula
+And the revised formula is stored in the ChordFormulaCatalog
+
+Scenario: Delete minor chord formula
+
+Given the ChordFormulaCatalog contains a minor chord formula
+When the administrator deletes the minor chord formula
+Then the system removes the formula from the ChordFormulaCatalog
+And the deleted formula is no longer available for chord identification
+
+Scenario: View maintained chord formula list
+
+Given the administrator is maintaining chord formulas
+When the administrator selects view chord formulas
+Then the system retrieves the maintained chord formulas
+And the system displays the chord formula list
+
+Scenario: Identify chord using newly added formula
+
+Given the administrator has added a suspended fourth formula
+When the user submits C F G
+Then the system validates the submitted notes
+And the system identifies Csus4 as a matching chord
+
+Scenario: Removed formula is no longer used
+
+Given the administrator has deleted the minor chord formula
+When the user submits C Eb G
+Then the system validates the submitted notes
+And the system does not identify C minor
+
+Scenario: Updated formula changes chord matching
+
+Given the administrator has edited an existing chord formula
+When the user submits notes that match the updated formula
+Then the system uses the updated formula during chord identification
+And the system returns the matching chord result
+
+Scenario: Display formula not found message
+
+Given the administrator is maintaining chord formulas
+When the administrator tries to edit or delete a formula that does not exist
+Then the system does not update the ChordFormulaCatalog
+And the system displays a formula not found message
+
 
 ## TDD Traceability to Methods
 
 TDD was used to test the individual methods and classes that implement the system behavior. The unit tests verify note validation, pitch position mapping, interval calculation, formula matching, chord identification, no-match handling, and administrator formula maintenance.
 
-```text
-Class / Method                                               Unit Test
-------------------------------------------------------------------------------------------------
-Note.from(noteText : String)                                 shouldCreateValidNote
 
-Note.from(noteText : String)                                 shouldTreatLowercaseInputAsValid
+Class / Method                                      TDD Test
+--------------------------------------------------------------------------------
+ChordFinderSystem.identifyChord()                   shouldIdentifyMajorChord
 
-Note.from(noteText : String)                                 shouldRejectInvalidNoteSpelling
+ChordFinderSystem.identifyChord()                   shouldIdentifyMinorChord
 
-Note.getPitchPosition()                                      shouldMapEnharmonicNotesToSamePitchPosition
+ChordFinderSystem.identifyChord()                   shouldReturnEmptyListForNoMatchingChord
 
-Note.distanceTo(otherNote : Note)                            shouldCalculateDistanceBetweenNotes
+ChordFinderSystem.identifyChord()                   shouldUseNewFormulaAfterAdministratorDefinesFormula
 
-ChordFormula.matchesNotes(rootNote, submittedNotes)          majorFormulaShouldMatchMajorTriad
+ChordFinderSystem.identifyChord()                   shouldNotUseFormulaAfterAdministratorDeletesFormula
 
-ChordFormula.matchesNotes(rootNote, submittedNotes)          minorFormulaShouldMatchMinorTriad
+ChordFinderSystem.validateNotes()                   shouldRejectFewerThanThreeNotes
 
-ChordFormula.matchesNotes(rootNote, submittedNotes)          majorFormulaShouldNotMatchMinorTriad
+ChordFinderSystem.validateNotes()                   shouldRejectMoreThanThreeNotes
 
-ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyGMajorFromNotesInAnyOrder
+ChordFinderSystem.validateNotes()                   shouldRejectInvalidNoteSpelling
 
-ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyCMinor
+ChordFinderSystem.defineChordFormula()              shouldUseNewFormulaAfterAdministratorDefinesFormula
 
-ChordFinderSystem.identifyChord(submittedNoteText)           shouldIdentifyMultipleAugmentedChords
+ChordFinderSystem.deleteChordFormula()              shouldNotUseFormulaAfterAdministratorDeletesFormula
 
-ChordFinderSystem.identifyChord(submittedNoteText)           shouldReturnEmptyListWhenNoChordMatches
+ChordFormulaCatalog.getChordFormulas()              shouldStartWithDefaultFormulas
 
-ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectFewerThanThreeNotes
+ChordFormulaCatalog.defineChordFormula()            shouldDefineNewFormula
 
-ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectMoreThanThreeNotes
+ChordFormulaCatalog.editChordFormula()              shouldEditExistingFormula
 
-ChordFinderSystem.validateNotes(submittedNoteText)           shouldRejectInvalidNoteSpelling
+ChordFormulaCatalog.deleteChordFormula()            shouldDeleteExistingFormula
 
-ChordFinderSystem.defineChordFormula(formula)                shouldUseNewFormulaAfterAdministratorDefinesFormula
+ChordFormulaCatalog.findFormula()                   shouldEditExistingFormula
 
-ChordFinderSystem.editChordFormula(qualityName, formula)     shouldUseRevisedFormulaAfterAdministratorEditsFormula
+ChordFormula.matchesNotes()                         majorFormulaShouldMatchMajorTriad
 
-ChordFinderSystem.deleteChordFormula(qualityName)            shouldNotUseFormulaAfterAdministratorDeletesFormula
+ChordFormula.matchesNotes()                         minorFormulaShouldMatchMinorTriad
 
-Chord.getChordName()                                         shouldReturnFormattedChordName
-```
+ChordFormula.matchesNotes()                         majorFormulaShouldNotMatchMinorTriad
+
+ChordFormula.updateFormula()                        updateFormulaShouldReviseFormulaValues
+
+Note.from()                                         shouldCreateValidNaturalNote
+
+Note.from()                                         shouldCreateValidSharpNote
+
+Note.from()                                         shouldCreateValidFlatNote
+
+Note.isValid()                                      shouldRejectInvalidNoteText
+
+Note.distanceTo()                                   shouldCalculateDistanceForward
+
+Note.distanceTo()                                   shouldCalculateDistanceAcrossOctave
+
 
 ### Traceability Summary
 
