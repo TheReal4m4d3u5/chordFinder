@@ -9,6 +9,9 @@ import static org.junit.Assert.assertTrue;
 
 public class ChordFinderSystemTest {
 
+	
+	
+	
     @Test
     public void shouldIdentifyMajorChord() {
         ChordFinderSystem system = new ChordFinderSystem();

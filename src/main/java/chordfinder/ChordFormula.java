@@ -8,6 +8,18 @@ public class ChordFormula {
     private int rootToThird;
     private int rootToFifth;
 
+    
+    public int getFirstInterval() {
+        return rootToThird;
+    }
+
+    public int getSecondInterval() {
+        return rootToFifth;
+    }
+    
+    
+    
+    
     public ChordFormula(String qualityName, String displaySuffix, int rootToThird, int rootToFifth) {
         this.qualityName = qualityName;
         this.displaySuffix = displaySuffix;

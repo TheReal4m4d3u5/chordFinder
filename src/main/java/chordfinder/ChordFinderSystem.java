@@ -70,8 +70,29 @@ public class ChordFinderSystem {
     }
 
     public void defineChordFormula(ChordFormula formula) {
+        validateChordFormula(formula);
         chordFormulaCatalog.defineChordFormula(formula);
-        resultMessage = "Chord formula added.";
+    }
+
+    private void validateChordFormula(ChordFormula formula) {
+        if (formula == null) {
+            throw new IllegalArgumentException("Chord formula is required.");
+        }
+
+        if (formula.getQualityName() == null || formula.getQualityName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Formula name is required.");
+        }
+
+        for (ChordFormula existingFormula : getChordFormulas()) {
+            if (existingFormula.getQualityName().equalsIgnoreCase(formula.getQualityName())) {
+                throw new IllegalArgumentException("Duplicate formula name.");
+            }
+
+            if (existingFormula.getFirstInterval() == formula.getFirstInterval()
+                    && existingFormula.getSecondInterval() == formula.getSecondInterval()) {
+                throw new IllegalArgumentException("Duplicate formula pattern.");
+            }
+        }
     }
 
     public void editChordFormula(String qualityName, ChordFormula revisedFormula) {

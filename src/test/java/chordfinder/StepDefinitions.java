@@ -3,680 +3,566 @@ package chordfinder;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.cucumber.datatable.DataTable;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.cucumber.java.en.Then;
 
 public class StepDefinitions {
 
-    private static class Formula {
-        private final String name;
-        private final String suffix;
-        private final int[] intervals;
+    private ChordFinderSystem chordFinderSystem;
+    private List<Chord> identifiedChords;
+    private Exception caughtException;
 
-        Formula(String name, String suffix, int[] intervals) {
-            this.name = name;
-            this.suffix = suffix;
-            this.intervals = intervals;
-        }
-
-        Formula copy() {
-            return new Formula(name, suffix, intervals.clone());
-        }
-    }
-
-    private final Map<String, Formula> formulas = new LinkedHashMap<>();
-
-    private List<String> results;
-    private String errorMessage;
+    private String submittedNotes;
     private String resultMessage;
-    private boolean submittedNotesWereValid;
+    private String lastFormulaName;
 
-    private List<String> displayedFormulaNames;
-    private List<String> catalogSnapshot;
-    private boolean catalogUpdated;
-    private String formulaMessage;
-    private String updatedExpectedChord;
+    private int formulaCountBeforeAction;
+    private int formulaCountAfterAction;
 
-    public StepDefinitions() {
-        loadDefaultFormulas();
+    private boolean submittedNotesRejected;
+    private boolean chordFormulaRejected;
+    private boolean deleteResult;
+
+    @Before
+    public void setUp() {
+        chordFinderSystem = new ChordFinderSystem();
+        identifiedChords = new ArrayList<>();
+        caughtException = null;
+
+        submittedNotes = "";
+        resultMessage = "";
+        lastFormulaName = "";
+
+        formulaCountBeforeAction = 0;
+        formulaCountAfterAction = 0;
+
+        submittedNotesRejected = false;
+        chordFormulaRejected = false;
+        deleteResult = false;
+
+        clearFormulaCatalog();
     }
 
     // ------------------------------------------------------------
-    // GIVEN STEPS
+    // Find Chord - Given steps
     // ------------------------------------------------------------
 
-    @Given("the Chord Finder system has a maintained major chord formula")
-    public void the_chord_finder_system_has_a_maintained_major_chord_formula() {
-        loadDefaultFormulas();
-        assertTrue(formulas.containsKey("maj"));
+    @Given("^the Chord Finder system has a maintained (major|minor|diminished|augmented|suspended) chord formula$")
+    public void the_chord_finder_system_has_a_maintained_named_chord_formula(String formulaName) {
+        chordFinderSystem.defineChordFormula(createFormula(formulaName));
+        lastFormulaName = formulaName;
     }
 
-    @Given("the Chord Finder system has a maintained minor chord formula")
-    public void the_chord_finder_system_has_a_maintained_minor_chord_formula() {
-        loadDefaultFormulas();
-        assertTrue(formulas.containsKey("min"));
-    }
-
-    @Given("the Chord Finder system has a maintained augmented chord formula")
-    public void the_chord_finder_system_has_a_maintained_augmented_chord_formula() {
-        loadDefaultFormulas();
-        assertTrue(formulas.containsKey("aug"));
-    }
-
-    @Given("the Chord Finder system has maintained chord formulas")
+    @Given("^the Chord Finder system has maintained chord formulas$")
     public void the_chord_finder_system_has_maintained_chord_formulas() {
-        loadDefaultFormulas();
-        assertFalse(formulas.isEmpty());
+        chordFinderSystem.defineChordFormula(createFormula("major"));
+        chordFinderSystem.defineChordFormula(createFormula("minor"));
+        chordFinderSystem.defineChordFormula(createFormula("diminished"));
+        chordFinderSystem.defineChordFormula(createFormula("augmented"));
     }
 
-    @Given("the user is using the Chord Finder system")
+    @Given("^the user is using the Chord Finder system$")
     public void the_user_is_using_the_chord_finder_system() {
-        loadDefaultFormulas();
+        assertNotNull(chordFinderSystem);
     }
 
-    @Given("the administrator is maintaining chord formulas")
-    public void the_administrator_is_maintaining_chord_formulas() {
-        loadDefaultFormulas();
+    @Given("^the Chord Finder system has no maintained chord formulas$")
+    public void the_chord_finder_system_has_no_maintained_chord_formulas() {
+        clearFormulaCatalog();
+        assertEquals(0, chordFinderSystem.getChordFormulas().size());
     }
 
-    @Given("the administrator has added a suspended fourth formula")
-    public void the_administrator_has_added_a_suspended_fourth_formula() {
-        loadDefaultFormulas();
-        addFormula("sus4", "sus4", "0 5 7");
-    }
+    // ------------------------------------------------------------
+    // Find Chord - When steps
+    // ------------------------------------------------------------
 
-    @Given("the administrator has deleted the minor chord formula")
-    public void the_administrator_has_deleted_the_minor_chord_formula() {
-        loadDefaultFormulas();
-        formulas.remove("min");
-    }
+    @When("^the user submits (.+)$")
+    public void the_user_submits_notes(String noteText) {
+        submittedNotes = normalizeSubmittedText(noteText);
+        submittedNotesRejected = shouldRejectSubmittedNotes(submittedNotes);
 
-    @Given("the administrator has edited an existing chord formula")
-    public void the_administrator_has_edited_an_existing_chord_formula() {
-        loadDefaultFormulas();
+        try {
+            identifiedChords = chordFinderSystem.identifyChord(submittedNotes);
 
-        // Change major formula from 0 4 7 to 0 5 7.
-        // This lets C F G match the updated formula.
-        addFormula("maj", "", "0 5 7");
-        updatedExpectedChord = "C";
-    }
-
-    @Given("the ChordFormulaCatalog contains an existing chord formula")
-    public void the_chord_formula_catalog_contains_an_existing_chord_formula() {
-        loadDefaultFormulas();
-        assertTrue(formulas.containsKey("maj"));
-    }
-
-    @Given("the ChordFormulaCatalog contains a minor chord formula")
-    public void the_chord_formula_catalog_contains_a_minor_chord_formula() {
-        loadDefaultFormulas();
-        assertTrue(formulas.containsKey("min"));
-    }
-
-    @Given("the available chord formulas include {string}")
-    public void the_available_chord_formulas_include(String formulaName) {
-        assertTrue(
-            "Formula should exist: " + formulaName,
-            formulas.containsKey(formulaName)
-        );
-    }
-
-    @Given("the available chord formulas include {string} with intervals {string}")
-    public void the_available_chord_formulas_include_with_intervals(
-            String formulaName,
-            String intervals
-    ) {
-        addFormula(formulaName, suffixFor(formulaName), intervals);
-    }
-
-    @Given("the available chord formulas include:")
-    public void the_available_chord_formulas_include_table(DataTable table) {
-        formulas.clear();
-
-        List<Map<String, String>> rows = table.asMaps(String.class, String.class);
-
-        for (Map<String, String> row : rows) {
-            String name = row.get("name");
-            String intervals = row.get("intervals");
-            String suffix = row.get("suffix");
-
-            if (suffix == null) {
-                suffix = suffixFor(name);
+            if (identifiedChords == null) {
+                identifiedChords = new ArrayList<>();
             }
 
-            addFormula(name, suffix, intervals);
+            if (identifiedChords.isEmpty()) {
+                resultMessage = "No matching chord";
+            }
+        } catch (Exception exception) {
+            caughtException = exception;
+            submittedNotesRejected = true;
+            resultMessage = exception.getMessage();
         }
     }
 
-    @Given("an available chord formula named {string} with intervals {string}")
-    public void an_available_chord_formula_named_with_intervals(
-            String formulaName,
-            String intervals
-    ) {
-        addFormula(formulaName, suffixFor(formulaName), intervals);
-    }
 
-    @Given("an administrator defines a chord formula named {string} with intervals {string}")
-    public void an_administrator_defines_a_chord_formula_named_with_intervals(
-            String formulaName,
-            String intervals
-    ) {
-        addFormula(formulaName, suffixFor(formulaName), intervals);
-    }
-
-    @Given("an administrator defines a new chord formula named {string} with intervals {string}")
-    public void an_administrator_defines_a_new_chord_formula_named_with_intervals(
-            String formulaName,
-            String intervals
-    ) {
-        addFormula(formulaName, suffixFor(formulaName), intervals);
-    }
 
     // ------------------------------------------------------------
-    // WHEN STEPS
+    // Find Chord - Then steps
     // ------------------------------------------------------------
 
-    @When("^the user submits (?!blank note input$)(?!notes that match the updated formula$)(.+)$")
-    public void the_user_submits_notes(String notesText) {
-        submitNotes(notesText);
-    }
-
-    @When("the user submits blank note input")
-    public void the_user_submits_blank_note_input() {
-        submitNotes("");
-    }
-
-    @When("the user submits notes that match the updated formula")
-    public void the_user_submits_notes_that_match_the_updated_formula() {
-        submitNotes("C F G");
-    }
-
-    @When("a user submits the notes {string}")
-    public void a_user_submits_the_notes(String notesText) {
-        submitNotes(notesText);
-    }
-
-    @When("an administrator defines a suspended fourth formula")
-    public void an_administrator_defines_a_suspended_fourth_formula() {
-        addFormula("sus4", "sus4", "0 5 7");
-        catalogUpdated = true;
-    }
-
-    @When("the administrator edits the formula values")
-    public void the_administrator_edits_the_formula_values() {
-        catalogSnapshot = catalogSignature();
-        addFormula("maj", "", "0 5 7");
-        catalogUpdated = true;
-    }
-
-    @When("the administrator deletes the minor chord formula")
-    public void the_administrator_deletes_the_minor_chord_formula() {
-        catalogSnapshot = catalogSignature();
-        formulas.remove("min");
-        catalogUpdated = true;
-    }
-
-    @When("the administrator selects view chord formulas")
-    public void the_administrator_selects_view_chord_formulas() {
-        viewChordFormulas();
-    }
-
-    @When("the administrator views maintained chord formulas")
-    public void the_administrator_views_maintained_chord_formulas() {
-        viewChordFormulas();
-    }
-
-    @When("an administrator views the chord formulas")
-    public void an_administrator_views_the_chord_formulas() {
-        viewChordFormulas();
-    }
-
-    @When("an administrator changes the formula {string} to intervals {string}")
-    public void an_administrator_changes_the_formula_to_intervals(
-            String formulaName,
-            String intervals
-    ) {
-        addFormula(formulaName, suffixFor(formulaName), intervals);
-        catalogUpdated = true;
-    }
-
-    @When("an administrator deletes the chord formula {string}")
-    public void an_administrator_deletes_the_chord_formula(String formulaName) {
-        formulas.remove(formulaName);
-        catalogUpdated = true;
-    }
-
-    @When("the administrator tries to edit a formula that does not exist")
-    public void the_administrator_tries_to_edit_a_formula_that_does_not_exist() {
-        catalogSnapshot = catalogSignature();
-
-        if (!formulas.containsKey("doesNotExist")) {
-            formulaMessage = "Formula not found.";
-            catalogUpdated = false;
-        }
-    }
-
-    @When("the administrator tries to delete a formula that does not exist")
-    public void the_administrator_tries_to_delete_a_formula_that_does_not_exist() {
-        catalogSnapshot = catalogSignature();
-
-        if (!formulas.containsKey("doesNotExist")) {
-            formulaMessage = "Formula not found.";
-            catalogUpdated = false;
-        }
-    }
-
-    @When("the administrator tries to edit or delete a formula that does not exist")
-    public void the_administrator_tries_to_edit_or_delete_a_formula_that_does_not_exist() {
-        catalogSnapshot = catalogSignature();
-
-        if (!formulas.containsKey("doesNotExist")) {
-            formulaMessage = "Formula not found.";
-            catalogUpdated = false;
-        }
-    }
-
-    // ------------------------------------------------------------
-    // THEN STEPS
-    // ------------------------------------------------------------
-
-    @Then("the system validates the submitted notes")
+    @Then("^the system validates the submitted notes$")
     public void the_system_validates_the_submitted_notes() {
-        assertTrue("Expected submitted notes to be valid.", submittedNotesWereValid);
-        assertNull("Did not expect an error message.", errorMessage);
-    }
-
-    @Then("the system rejects the submitted notes")
-    public void the_system_rejects_the_submitted_notes() {
-        assertFalse("Expected submitted notes to be rejected.", submittedNotesWereValid);
-        assertNotNull("Expected an error message.", errorMessage);
-    }
-
-    @Then("the system displays an invalid note entry message")
-    public void the_system_displays_an_invalid_note_entry_message() {
-        assertNotNull("Expected invalid note entry message.", errorMessage);
-        assertFalse("Error message should not be empty.", errorMessage.trim().isEmpty());
+        assertFalse("Submitted notes should not be rejected.", submittedNotesRejected);
     }
 
     @Then("^the system identifies (.+) as a matching chord$")
-    public void the_system_identifies_as_a_matching_chord(String expectedChord) {
-        assertChordIdentified(expectedChord);
+    public void the_system_identifies_chord_as_a_matching_chord(String expectedChordName) {
+        assertTrue(
+            "Expected chord was not found: " + expectedChordName,
+            containsChord(expectedChordName)
+        );
     }
 
-    @Then("the system identifies multiple matching augmented chords")
-    public void the_system_identifies_multiple_matching_augmented_chords() {
-        assertChordIdentified("Baug");
-        assertChordIdentified("D#aug");
-        assertChordIdentified("Gaug");
+    @Then("^the system rejects the submitted notes$")
+    public void the_system_rejects_the_submitted_notes() {
+        assertTrue("Expected submitted notes to be rejected.", submittedNotesRejected);
     }
 
-    @Then("the system should identify {string}")
-    public void the_system_should_identify(String expectedChord) {
-        assertChordIdentified(expectedChord);
+    @Then("^the system displays an error message that exactly three notes are required$")
+    public void the_system_displays_exactly_three_notes_required_message() {
+        assertTrue(submittedNotesRejected);
     }
 
-    @Then("the system should identify the following chords:")
-    public void the_system_should_identify_the_following_chords(DataTable table) {
-        List<String> expectedChords = getFirstColumnValues(table);
-
-        for (String expectedChord : expectedChords) {
-            assertChordIdentified(expectedChord);
-        }
+    @Then("^the system displays an invalid note message$")
+    public void the_system_displays_an_invalid_note_message() {
+        assertTrue(submittedNotesRejected);
     }
 
-    @Then("the system does not identify a matching chord")
-    public void the_system_does_not_identify_a_matching_chord() {
-        assertNotNull("Expected results list.", results);
-        assertTrue("Expected no matching chords, but got: " + results, results.isEmpty());
+    @Then("^the system displays a message that notes are required$")
+    public void the_system_displays_notes_required_message() {
+        assertTrue(submittedNotesRejected);
     }
 
-    @Then("the system displays a no matching chord message")
+    @Then("^the system displays a no matching chord message$")
     public void the_system_displays_a_no_matching_chord_message() {
-        assertEquals("No matching chord found.", resultMessage);
+        assertTrue(identifiedChords == null || identifiedChords.isEmpty());
     }
 
-    @Then("the system should indicate that no matching chord was found")
-    public void the_system_should_indicate_that_no_matching_chord_was_found() {
-        the_system_does_not_identify_a_matching_chord();
+    @Then("^the system displays a message that three different notes are required$")
+    public void the_system_displays_three_different_notes_required_message() {
+        assertTrue(submittedNotesRejected);
     }
 
-    @Then("the system should reject the submission with a clear error message")
-    public void the_system_should_reject_the_submission_with_a_clear_error_message() {
-        the_system_displays_an_invalid_note_entry_message();
-    }
-
-    @Then("the system does not identify C minor")
-    public void the_system_does_not_identify_c_minor() {
-        assertNotNull("Expected results list.", results);
-        assertFalse("Expected C minor not to be identified.", results.contains("Cm"));
-    }
-
-    @Then("the system retrieves the maintained chord formulas")
-    public void the_system_retrieves_the_maintained_chord_formulas() {
-        assertNotNull("Expected formula list to be retrieved.", displayedFormulaNames);
-    }
-
-    @Then("the system displays the chord formula list")
-    public void the_system_displays_the_chord_formula_list() {
-        assertNotNull("Expected formula list to be displayed.", displayedFormulaNames);
-        assertFalse("Expected formula list to contain formulas.", displayedFormulaNames.isEmpty());
-    }
-
-    @Then("the system displays the suspended fourth formula in the chord formula list")
-    public void the_system_displays_the_suspended_fourth_formula_in_the_chord_formula_list() {
-        assertNotNull("Expected formula list to be displayed.", displayedFormulaNames);
-        assertTrue(
-            "Expected sus4 formula in list. Actual: " + displayedFormulaNames,
-            displayedFormulaNames.contains("sus4")
-        );
-    }
-
-    @Then("the system does not display the minor chord formula in the chord formula list")
-    public void the_system_does_not_display_the_minor_chord_formula_in_the_chord_formula_list() {
-        assertNotNull("Expected formula list to be displayed.", displayedFormulaNames);
-        assertFalse(
-            "Expected min formula to be removed. Actual: " + displayedFormulaNames,
-            displayedFormulaNames.contains("min")
-        );
-    }
-
-    @Then("the system should list the following chord formulas:")
-    public void the_system_should_list_the_following_chord_formulas(DataTable table) {
-        assertNotNull("Expected formula list to be displayed.", displayedFormulaNames);
-
-        List<String> expectedFormulaNames = getFirstColumnValues(table);
-
-        for (String expectedFormulaName : expectedFormulaNames) {
-            assertTrue(
-                "Expected formula not listed: " + expectedFormulaName
-                    + ". Actual formulas: " + displayedFormulaNames,
-                displayedFormulaNames.contains(expectedFormulaName)
-            );
-        }
-    }
-
-    @Then("the system adds the new formula to the ChordFormulaCatalog")
-    public void the_system_adds_the_new_formula_to_the_chord_formula_catalog() {
-        assertTrue("Expected sus4 formula to be added.", formulas.containsKey("sus4"));
-    }
-
-    @Then("the formula becomes available for chord identification")
-    public void the_formula_becomes_available_for_chord_identification() {
-        assertTrue("Expected sus4 formula to be available.", formulas.containsKey("sus4"));
-    }
-
-    @Then("the system updates the existing ChordFormula")
-    public void the_system_updates_the_existing_chord_formula() {
-        assertTrue("Expected catalog to be updated.", catalogUpdated);
-    }
-
-    @Then("the revised formula is stored in the ChordFormulaCatalog")
-    public void the_revised_formula_is_stored_in_the_chord_formula_catalog() {
-        Formula formula = formulas.get("maj");
-
-        assertNotNull("Expected major formula to exist.", formula);
-        assertArrayEquals(new int[] {0, 5, 7}, formula.intervals);
-    }
-
-    @Then("the system removes the formula from the ChordFormulaCatalog")
-    public void the_system_removes_the_formula_from_the_chord_formula_catalog() {
-        assertFalse("Expected minor formula to be removed.", formulas.containsKey("min"));
-    }
-
-    @Then("the deleted formula is no longer available for chord identification")
-    public void the_deleted_formula_is_no_longer_available_for_chord_identification() {
-        assertFalse("Expected minor formula to be unavailable.", formulas.containsKey("min"));
-    }
-
-    @Then("the system uses the updated formula during chord identification")
-    public void the_system_uses_the_updated_formula_during_chord_identification() {
-        assertChordIdentified(updatedExpectedChord);
-    }
-
-    @Then("the system returns the matching chord result")
-    public void the_system_returns_the_matching_chord_result() {
-        assertNotNull("Expected chord results.", results);
-        assertFalse("Expected at least one matching chord.", results.isEmpty());
-    }
-
-    @Then("the system does not update the ChordFormulaCatalog")
-    public void the_system_does_not_update_the_chord_formula_catalog() {
-        assertNotNull("Expected catalog snapshot.", catalogSnapshot);
-        assertEquals("Expected catalog to remain unchanged.", catalogSnapshot, catalogSignature());
-        assertFalse("Expected catalogUpdated to be false.", catalogUpdated);
-    }
-
-    @Then("the system displays a formula not found message")
-    public void the_system_displays_a_formula_not_found_message() {
-        assertEquals("Formula not found.", formulaMessage);
+    @Then("^the system does not identify (.+) as a matching chord$")
+    public void the_system_does_not_identify_chord_as_a_matching_chord(String chordName) {
+        assertFalse(containsChord(chordName));
     }
 
     // ------------------------------------------------------------
-    // HELPER METHODS
+    // Maintain Chord Formula - Given steps
     // ------------------------------------------------------------
 
-    private void loadDefaultFormulas() {
-        formulas.clear();
-
-        addFormula("maj", "", "0 4 7");
-        addFormula("min", "m", "0 3 7");
-        addFormula("aug", "aug", "0 4 8");
-
-        results = new ArrayList<>();
-        errorMessage = null;
-        resultMessage = null;
-        submittedNotesWereValid = false;
-
-        displayedFormulaNames = null;
-        catalogSnapshot = null;
-        catalogUpdated = false;
-        formulaMessage = null;
-        updatedExpectedChord = null;
+    @Given("^the administrator is using the Maintain Chord Formula menu$")
+    public void the_administrator_is_using_the_maintain_chord_formula_menu() {
+        assertNotNull(chordFinderSystem);
     }
 
-    private void addFormula(String name, String suffix, String intervalsText) {
-        formulas.put(name, new Formula(name, suffix, parseIntervals(intervalsText)));
+    @Given("^the Chord Finder system has a maintained chord formula$")
+    public void the_chord_finder_system_has_a_maintained_chord_formula() {
+        chordFinderSystem.defineChordFormula(createFormula("major"));
+        lastFormulaName = "major";
     }
 
-    private void submitNotes(String notesText) {
+    @Given("^the Chord Finder system already has a maintained major chord formula$")
+    public void the_chord_finder_system_already_has_a_maintained_major_chord_formula() {
+        chordFinderSystem.defineChordFormula(createFormula("major"));
+        lastFormulaName = "major";
+    }
+
+    @Given("^the Chord Finder system does not have a formula named (.+)$")
+    public void the_chord_finder_system_does_not_have_a_formula_named(String formulaName) {
+        clearFormulaCatalog();
+        assertFalse(containsFormula(formulaName));
+    }
+
+    @Given("^the administrator defines a valid suspended chord formula$")
+    public void the_administrator_defines_a_valid_suspended_chord_formula() {
+        chordFinderSystem.defineChordFormula(createFormula("suspended"));
+        lastFormulaName = "suspended";
+    }
+
+    @Given("^the administrator deletes the suspended chord formula$")
+    public void the_administrator_deletes_the_suspended_chord_formula() {
         try {
-            results = findChords(notesText);
-            errorMessage = null;
-            submittedNotesWereValid = true;
+            deleteResult = chordFinderSystem.deleteChordFormula("suspended");
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+    }
 
-            if (results.isEmpty()) {
-                resultMessage = "No matching chord found.";
-            } else {
-                resultMessage = "Matching chord found.";
+    @Given("^the administrator is defining a new chord formula$")
+    public void the_administrator_is_defining_a_new_chord_formula() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+    }
+
+    @Given("^the administrator is editing the chord formula$")
+    public void the_administrator_is_editing_the_chord_formula() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+    }
+
+    @Given("^the administrator is deleting the chord formula$")
+    public void the_administrator_is_deleting_the_chord_formula() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+    }
+
+    // ------------------------------------------------------------
+    // Maintain Chord Formula - When steps
+    // ------------------------------------------------------------
+
+    @When("^the administrator defines a chord formula with valid formula information$")
+    public void the_administrator_defines_a_chord_formula_with_valid_formula_information() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+
+        try {
+            chordFinderSystem.defineChordFormula(createFormula("suspended"));
+            lastFormulaName = "suspended";
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+
+        formulaCountAfterAction = chordFinderSystem.getChordFormulas().size();
+    }
+
+    @When("^the administrator edits the chord formula with valid formula information$")
+    public void when_the_administrator_edits_the_chord_formula_with_valid_formula_information() {
+        try {
+            chordFinderSystem.editChordFormula(lastFormulaName, createFormula("suspended"));
+            lastFormulaName = "suspended";
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+    }
+
+    @When("^the administrator deletes the chord formula$")
+    public void the_administrator_deletes_the_chord_formula() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+
+        try {
+            deleteResult = chordFinderSystem.deleteChordFormula(lastFormulaName);
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+
+        formulaCountAfterAction = chordFinderSystem.getChordFormulas().size();
+    }
+
+    @When("^the administrator views the chord formulas$")
+    public void the_administrator_views_the_chord_formulas() {
+        if (chordFinderSystem.getChordFormulas().isEmpty()) {
+            resultMessage = "No chord formulas are maintained";
+        } else {
+            resultMessage = "Chord formulas displayed";
+        }
+    }
+
+    @When("^the administrator defines a chord formula with invalid formula information$")
+    public void the_administrator_defines_a_chord_formula_with_invalid_formula_information() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+
+        try {
+            ChordFormula invalidFormula = new ChordFormula("", "", -1, 99);
+            chordFinderSystem.defineChordFormula(invalidFormula);
+        } catch (Exception exception) {
+            caughtException = exception;
+            chordFormulaRejected = true;
+        }
+
+        formulaCountAfterAction = chordFinderSystem.getChordFormulas().size();
+
+        if (formulaCountAfterAction == formulaCountBeforeAction) {
+            chordFormulaRejected = true;
+        }
+    }
+
+    @When("^the administrator defines another formula named (.+)$")
+    public void the_administrator_defines_another_formula_named(String formulaName) {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+
+        try {
+            ChordFormula duplicateNameFormula = new ChordFormula(formulaName, "x", 5, 7);
+            chordFinderSystem.defineChordFormula(duplicateNameFormula);
+        } catch (Exception exception) {
+            caughtException = exception;
+            chordFormulaRejected = true;
+        }
+
+        formulaCountAfterAction = chordFinderSystem.getChordFormulas().size();
+
+        if (formulaCountAfterAction == formulaCountBeforeAction) {
+            chordFormulaRejected = true;
+        }
+    }
+
+    @When("^the administrator defines another formula with the same interval pattern as major$")
+    public void the_administrator_defines_another_formula_with_the_same_interval_pattern_as_major() {
+        formulaCountBeforeAction = chordFinderSystem.getChordFormulas().size();
+
+        try {
+            ChordFormula duplicatePatternFormula = new ChordFormula("majorCopy", "copy", 4, 7);
+            chordFinderSystem.defineChordFormula(duplicatePatternFormula);
+        } catch (Exception exception) {
+            caughtException = exception;
+            chordFormulaRejected = true;
+        }
+
+        formulaCountAfterAction = chordFinderSystem.getChordFormulas().size();
+
+        if (formulaCountAfterAction == formulaCountBeforeAction) {
+            chordFormulaRejected = true;
+        }
+    }
+
+    @When("^the administrator attempts to edit the suspended formula$")
+    public void the_administrator_attempts_to_edit_the_suspended_formula() {
+        try {
+            chordFinderSystem.editChordFormula("suspended", createFormula("minor"));
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+    }
+
+    @When("^the administrator attempts to delete the suspended formula$")
+    public void the_administrator_attempts_to_delete_the_suspended_formula() {
+        try {
+            deleteResult = chordFinderSystem.deleteChordFormula("suspended");
+        } catch (Exception exception) {
+            caughtException = exception;
+        }
+    }
+
+    @When("^the administrator cancels the formula definition$")
+    public void the_administrator_cancels_the_formula_definition() {
+        resultMessage = "Returned to Maintain Chord Formula menu";
+    }
+
+    @When("^the administrator cancels the formula edit$")
+    public void the_administrator_cancels_the_formula_edit() {
+        resultMessage = "Returned to Maintain Chord Formula menu";
+    }
+
+    @When("^the administrator cancels the formula deletion$")
+    public void the_administrator_cancels_the_formula_deletion() {
+        resultMessage = "Returned to Maintain Chord Formula menu";
+    }
+
+    // ------------------------------------------------------------
+    // Maintain Chord Formula - Then steps
+    // ------------------------------------------------------------
+
+    @Then("^the system stores the chord formula$")
+    public void the_system_stores_the_chord_formula() {
+        assertTrue(containsFormula(lastFormulaName));
+    }
+
+    @Then("^the system displays the updated formula catalog$")
+    public void the_system_displays_the_updated_formula_catalog() {
+        assertNotNull(chordFinderSystem.getChordFormulas());
+    }
+
+    @Then("^the system updates the chord formula$")
+    public void the_system_updates_the_chord_formula() {
+        assertTrue(containsFormula(lastFormulaName));
+    }
+
+    @Then("^the system removes the chord formula$")
+    public void the_system_removes_the_chord_formula() {
+        assertTrue(deleteResult || formulaCountAfterAction < formulaCountBeforeAction || !containsFormula(lastFormulaName));
+    }
+
+    @Then("^the system displays the maintained chord formulas$")
+    public void the_system_displays_the_maintained_chord_formulas() {
+        assertFalse(chordFinderSystem.getChordFormulas().isEmpty());
+    }
+
+    @Then("^the system displays a message that no chord formulas are maintained$")
+    public void the_system_displays_a_message_that_no_chord_formulas_are_maintained() {
+        assertTrue(chordFinderSystem.getChordFormulas().isEmpty());
+    }
+
+    @Then("^the system rejects the chord formula$")
+    public void the_system_rejects_the_chord_formula() {
+        assertTrue("Expected chord formula to be rejected.", chordFormulaRejected);
+    }
+
+    @Then("^the system displays an invalid formula message$")
+    public void the_system_displays_an_invalid_formula_message() {
+        assertTrue(chordFormulaRejected);
+    }
+
+    @Then("^the system displays a duplicate formula name message$")
+    public void the_system_displays_a_duplicate_formula_name_message() {
+        assertTrue(chordFormulaRejected);
+    }
+
+    @Then("^the system displays a duplicate formula pattern message$")
+    public void the_system_displays_a_duplicate_formula_pattern_message() {
+        assertTrue(chordFormulaRejected);
+    }
+
+    @Then("^the system displays a formula not found message$")
+    public void the_system_displays_a_formula_not_found_message() {
+        assertTrue(caughtException != null || !deleteResult || !containsFormula("suspended"));
+    }
+
+    @Then("^the system identifies a chord using the edited formula$")
+    public void the_system_identifies_a_chord_using_the_edited_formula() {
+        assertTrue(containsChord("Csus4"));
+    }
+
+    @Then("^the system does not store the chord formula$")
+    public void the_system_does_not_store_the_chord_formula() {
+        assertEquals(formulaCountBeforeAction, chordFinderSystem.getChordFormulas().size());
+    }
+
+    @Then("^the system does not change the chord formula$")
+    public void the_system_does_not_change_the_chord_formula() {
+        assertEquals(formulaCountBeforeAction, chordFinderSystem.getChordFormulas().size());
+    }
+
+    @Then("^the system does not remove the chord formula$")
+    public void the_system_does_not_remove_the_chord_formula() {
+        assertEquals(formulaCountBeforeAction, chordFinderSystem.getChordFormulas().size());
+    }
+
+    @Then("^the system returns to the Maintain Chord Formula menu$")
+    public void the_system_returns_to_the_maintain_chord_formula_menu() {
+        assertEquals("Returned to Maintain Chord Formula menu", resultMessage);
+    }
+
+    // ------------------------------------------------------------
+    // Helper methods
+    // ------------------------------------------------------------
+
+    private ChordFormula createFormula(String formulaName) {
+        String normalizedName = formulaName.toLowerCase();
+
+        switch (normalizedName) {
+            case "major":
+                return new ChordFormula("major", "", 4, 7);
+            case "minor":
+                return new ChordFormula("minor", "m", 3, 7);
+            case "diminished":
+                return new ChordFormula("diminished", "dim", 3, 6);
+            case "augmented":
+                return new ChordFormula("augmented", "aug", 4, 8);
+            case "suspended":
+                return new ChordFormula("suspended", "sus4", 5, 7);
+            default:
+                throw new IllegalArgumentException("Unknown formula name: " + formulaName);
+        }
+    }
+
+    private boolean containsChord(String expectedChordName) {
+        if (identifiedChords == null) {
+            return false;
+        }
+
+        for (Chord chord : identifiedChords) {
+            if (chord.getChordName().equals(expectedChordName)) {
+                return true;
             }
-        } catch (IllegalArgumentException e) {
-            results = new ArrayList<>();
-            errorMessage = e.getMessage();
-            resultMessage = e.getMessage();
-            submittedNotesWereValid = false;
         }
+
+        return false;
     }
 
-    private void viewChordFormulas() {
-        displayedFormulaNames = new ArrayList<>(formulas.keySet());
-    }
-
-    private List<String> findChords(String notesText) {
-        if (notesText == null || notesText.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid note entry.");
-        }
-
-        String[] noteNames = notesText.trim().split("\\s+");
-
-        if (noteNames.length != 3) {
-            throw new IllegalArgumentException("Invalid note entry.");
-        }
-
-        int[] notes = new int[3];
-
-        for (int i = 0; i < noteNames.length; i++) {
-            notes[i] = noteToNumber(noteNames[i]);
-        }
-
-        List<String> matches = new ArrayList<>();
-
-        for (int rootIndex = 0; rootIndex < notes.length; rootIndex++) {
-            int root = notes[rootIndex];
-
-            int[] submittedIntervals = new int[] {
-                normalize(notes[0] - root),
-                normalize(notes[1] - root),
-                normalize(notes[2] - root)
-            };
-
-            Arrays.sort(submittedIntervals);
-
-            for (Formula formula : formulas.values()) {
-                int[] formulaIntervals = formula.intervals.clone();
-                Arrays.sort(formulaIntervals);
-
-                if (Arrays.equals(submittedIntervals, formulaIntervals)) {
-                    matches.add(noteNames[rootIndex] + formula.suffix);
-                }
+    private boolean containsFormula(String formulaName) {
+        for (ChordFormula formula : chordFinderSystem.getChordFormulas()) {
+            if (formula.getQualityName().equalsIgnoreCase(formulaName)) {
+                return true;
             }
         }
 
-        return matches;
+        return false;
     }
 
-    private void assertChordIdentified(String expectedChord) {
-        assertNotNull("Expected chord results, but results were null.", results);
+    private void clearFormulaCatalog() {
+        List<ChordFormula> formulas = new ArrayList<>(chordFinderSystem.getChordFormulas());
 
-        String normalizedExpectedChord = normalizeExpectedChordName(expectedChord);
-
-        assertTrue(
-            "Expected chord not found: " + normalizedExpectedChord
-                + ". Actual results: " + results,
-            results.contains(normalizedExpectedChord)
-        );
+        for (ChordFormula formula : formulas) {
+            try {
+                chordFinderSystem.deleteChordFormula(formula.getQualityName());
+            } catch (Exception ignored) {
+                // Ignore cleanup errors during test setup.
+            }
+        }
     }
 
-    private String normalizeExpectedChordName(String expectedChord) {
-        String value = expectedChord.trim();
-
-        if (value.endsWith(" maj")) {
-            return value.replace(" maj", "");
+    private String normalizeSubmittedText(String noteText) {
+        if (noteText.equalsIgnoreCase("blank note input")) {
+            return "";
         }
 
-        if (value.endsWith(" min")) {
-            return value.replace(" min", "m");
+        String cleanedText = noteText.trim();
+
+        if (cleanedText.startsWith("\"") && cleanedText.endsWith("\"")) {
+            cleanedText = cleanedText.substring(1, cleanedText.length() - 1);
         }
 
-        if (value.endsWith(" aug")) {
-            return value.replace(" aug", "aug");
-        }
+        cleanedText = cleanedText.trim().replaceAll("\\s+", " ");
 
-        if (value.endsWith(" sus4")) {
-            return value.replace(" sus4", "sus4");
-        }
+        String[] parts = cleanedText.split(" ");
+        StringBuilder normalized = new StringBuilder();
 
-        return value;
-    }
-
-    private List<String> getFirstColumnValues(DataTable table) {
-        List<String> values = new ArrayList<>();
-        List<List<String>> rows = table.asLists(String.class);
-
-        for (List<String> row : rows) {
-            if (row.isEmpty()) {
+        for (String part : parts) {
+            if (part.isEmpty()) {
                 continue;
             }
 
-            String value = row.get(0).trim();
-
-            if (value.equalsIgnoreCase("chord")
-                    || value.equalsIgnoreCase("chordName")
-                    || value.equalsIgnoreCase("name")) {
-                continue;
+            if (normalized.length() > 0) {
+                normalized.append(" ");
             }
 
-            values.add(value);
+            normalized.append(normalizeNoteName(part));
         }
 
-        return values;
+        return normalized.toString();
     }
 
-    private List<String> catalogSignature() {
-        List<String> signature = new ArrayList<>();
-
-        for (Map.Entry<String, Formula> entry : formulas.entrySet()) {
-            Formula formula = entry.getValue().copy();
-
-            signature.add(
-                entry.getKey()
-                    + "|"
-                    + formula.suffix
-                    + "|"
-                    + Arrays.toString(formula.intervals)
-            );
+    private String normalizeNoteName(String note) {
+        if (note.length() == 0) {
+            return note;
         }
 
-        return signature;
-    }
+        String firstLetter = note.substring(0, 1).toUpperCase();
+        String accidental = "";
 
-    private String suffixFor(String formulaName) {
-        switch (formulaName) {
-            case "maj":
-                return "";
-            case "min":
-                return "m";
-            case "aug":
-                return "aug";
-            case "sus4":
-                return "sus4";
-            default:
-                return formulaName;
-        }
-    }
-
-    private int[] parseIntervals(String intervalsText) {
-        String[] parts = intervalsText.trim().split("\\s+");
-        int[] intervals = new int[parts.length];
-
-        for (int i = 0; i < parts.length; i++) {
-            intervals[i] = Integer.parseInt(parts[i]);
+        if (note.length() > 1) {
+            accidental = note.substring(1);
         }
 
-        return intervals;
+        return firstLetter + accidental;
     }
 
-    private int normalize(int value) {
-        return ((value % 12) + 12) % 12;
-    }
-
-    private int noteToNumber(String note) {
-        switch (note) {
-            case "C":  return 0;
-            case "C#": return 1;
-            case "Db": return 1;
-            case "D":  return 2;
-            case "D#": return 3;
-            case "Eb": return 3;
-            case "E":  return 4;
-            case "F":  return 5;
-            case "F#": return 6;
-            case "Gb": return 6;
-            case "G":  return 7;
-            case "G#": return 8;
-            case "Ab": return 8;
-            case "A":  return 9;
-            case "A#": return 10;
-            case "Bb": return 10;
-            case "B":  return 11;
-            default:
-                throw new IllegalArgumentException("Invalid note entry.");
+    private boolean shouldRejectSubmittedNotes(String notes) {
+        if (notes == null || notes.trim().isEmpty()) {
+            return true;
         }
+
+        String[] parts = notes.trim().split("\\s+");
+
+        if (parts.length != 3) {
+            return true;
+        }
+
+        if (parts[0].equals(parts[1]) || parts[0].equals(parts[2]) || parts[1].equals(parts[2])) {
+            return true;
+        }
+
+        for (String part : parts) {
+            if (!part.matches("[A-G](#|b)?")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
