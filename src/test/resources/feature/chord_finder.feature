@@ -1,5 +1,149 @@
 Feature: Find Chord
 
+
+
+Scenario: Rebuild formula catalog and only use newly added formula
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+  When the administrator defines a major chord formula
+  And the user submits C E G
+  Then the system identifies C as a matching chord
+  And the system does not identify Cm as a matching chord
+  And the system does not identify Cdim as a matching chord
+  And the system does not identify Caug as a matching chord
+
+
+Scenario: Rebuilt formula catalog only uses newly added major formula
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the administrator defines a major chord formula
+  And the user submits C E G
+  Then the system validates the submitted notes
+  And the system identifies C as a matching chord
+  And the system does not identify Cm as a matching chord
+  And the system does not identify Cdim as a matching chord
+  And the system does not identify Caug as a matching chord
+
+
+Scenario: Rebuilt formula catalog only uses newly added minor formula
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the administrator defines a minor chord formula
+  And the user submits C Eb G
+  Then the system validates the submitted notes
+  And the system identifies Cm as a matching chord
+  And the system does not identify C as a matching chord
+  And the system does not identify Cdim as a matching chord
+  And the system does not identify Caug as a matching chord
+
+
+Scenario: Rebuilt formula catalog only uses newly added diminished formula
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the administrator defines a diminished chord formula
+  And the user submits C Eb Gb
+  Then the system validates the submitted notes
+  And the system identifies Cdim as a matching chord
+  And the system does not identify C as a matching chord
+  And the system does not identify Cm as a matching chord
+  And the system does not identify Caug as a matching chord
+
+
+Scenario: Rebuilt formula catalog only uses newly added augmented formula
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the administrator defines an augmented chord formula
+  And the user submits C E G#
+  Then the system validates the submitted notes
+  And the system identifies Caug as a matching chord
+  And the system does not identify C as a matching chord
+  And the system does not identify Cm as a matching chord
+  And the system does not identify Cdim as a matching chord
+
+
+
+
+
+Scenario: Submit valid notes when formula catalog is empty
+  Given the Chord Finder system has no maintained chord formulas
+  When the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+
+
+Scenario: Deleted formulas are not used after catalog rebuild
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  When the administrator defines a major chord formula
+  And the user submits C E G
+  Then the system identifies C as a matching chord
+  And the system does not identify Cm as a matching chord
+  And the system does not identify Cdim as a matching chord
+  And the system does not identify Caug as a matching chord
+
+
+Scenario: Same submitted notes are evaluated against current catalog state
+  Given the administrator deletes all chord formulas
+  When the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+  When the administrator defines a major chord formula
+  And the user submits C E G
+  Then the system identifies C as a matching chord
+
+
+Scenario: Chord results are not reused after formulas are deleted
+  Given the Chord Finder system has maintained chord formulas
+  When the user submits C E G
+  Then the system identifies C as a matching chord
+  When the administrator deletes all chord formulas
+  And the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+
+
+Scenario: Invalid notes are rejected before searching empty catalog
+  Given the administrator deletes all chord formulas
+  When the user submits C E H
+  Then the system rejects the submitted notes
+
+
+Scenario: Fewer than three notes are rejected before searching empty catalog
+  Given the administrator deletes all chord formulas
+  When the user submits C E
+  Then the system rejects the submitted notes
+
+
+Scenario: More than three notes are rejected before searching empty catalog
+  Given the administrator deletes all chord formulas
+  When the user submits C E G B
+  Then the system rejects the submitted notes
+
+
+Scenario: Delete all formulas from an already empty catalog
+  Given the Chord Finder system has no maintained chord formulas
+  When the administrator deletes all chord formulas
+  And the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+
+
+Scenario: Formula catalog uses current state after multiple rebuilds
+  Given the Chord Finder system has maintained chord formulas
+  And the administrator deletes all chord formulas
+  And the administrator defines a major chord formula
+  When the user submits C E G
+  Then the system identifies C as a matching chord
+  When the administrator deletes all chord formulas
+  And the user submits C E G
+  Then the system validates the submitted notes
+  And the system displays a no matching chord message
+
+
+
 Scenario: Identify G major from D G B
   Given the Chord Finder system has a maintained major chord formula
   When the user submits D G B

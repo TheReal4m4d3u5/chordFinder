@@ -377,6 +377,29 @@ public class StepDefinitions {
         assertTrue(deleteResult || formulaCountAfterAction < formulaCountBeforeAction || !containsFormula(lastFormulaName));
     }
 
+    
+    @Given("^the administrator deletes all chord formulas$")
+    public void the_administrator_deletes_all_chord_formulas() {
+        List<ChordFormula> formulas = new ArrayList<>(chordFinderSystem.getChordFormulas());
+
+        for (ChordFormula formula : formulas) {
+            chordFinderSystem.deleteChordFormula(formula.getQualityName());
+        }
+
+        assertTrue(chordFinderSystem.getChordFormulas().isEmpty());
+    }
+    
+    @When("^the administrator defines a major chord formula$")
+    public void the_administrator_defines_a_major_chord_formula() {
+        try {
+            chordFinderSystem.defineChordFormula(createFormula("major"));
+            lastFormulaName = "major";
+        } catch (Exception exception) {
+            caughtException = exception;
+            resultMessage = exception.getMessage();
+        }
+    }
+    
     @Then("^the system displays the maintained chord formulas$")
     public void the_system_displays_the_maintained_chord_formulas() {
         assertFalse(chordFinderSystem.getChordFormulas().isEmpty());
@@ -437,6 +460,38 @@ public class StepDefinitions {
         assertEquals("Returned to Maintain Chord Formula menu", resultMessage);
     }
 
+    
+    
+    
+    
+    @When("the administrator defines a minor chord formula")
+    public void the_administrator_defines_a_minor_chord_formula() {
+        ChordFormula minorFormula = new ChordFormula("minor", "m", 3, 7);
+        chordFinderSystem.defineChordFormula(minorFormula);
+    }
+
+    @When("the administrator defines a diminished chord formula")
+    public void the_administrator_defines_a_diminished_chord_formula() {
+        ChordFormula diminishedFormula = new ChordFormula("diminished", "dim", 3, 6);
+        chordFinderSystem.defineChordFormula(diminishedFormula);
+    }
+
+    @When("the administrator defines an augmented chord formula")
+    public void the_administrator_defines_an_augmented_chord_formula() {
+        ChordFormula augmentedFormula = new ChordFormula("augmented", "aug", 4, 8);
+        chordFinderSystem.defineChordFormula(augmentedFormula);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     // ------------------------------------------------------------
     // Helper methods
     // ------------------------------------------------------------
